@@ -1,7 +1,7 @@
 package examplefuncsplayer;
 import battlecode.common.*;
 
-public strictfp class RobotPlayer {
+public strictfp class v1 {
     static RobotController rc;
 
     static final RobotType[] spawnableRobot = {
