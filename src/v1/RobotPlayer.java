@@ -64,13 +64,6 @@ public strictfp class RobotPlayer {
     static void runEnlightenmentCenter() throws GameActionException {
         RobotType toBuild = randomSpawnableRobotType();
         int influence = 50;
-        for (Direction dir : directions) {
-            if (rc.canBuildRobot(toBuild, dir, influence)) {
-                rc.buildRobot(toBuild, dir, influence);
-            } else {
-                break;
-            }
-        }
     }
 
     static void runPolitician() throws GameActionException {
