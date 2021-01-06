@@ -64,7 +64,15 @@ public strictfp class v1 {
 
     static void runEnlightenmentCenter() throws GameActionException {
         RobotType toBuild = randomSpawnableRobotType();
-        int influence = 50;
+        for (Direction dir : directions) {
+            if (rc.canBuildRobot(toBuild, dir, 50) && toBuild == RobotType.POLITICIAN) {
+                rc.buildRobot(toBuild, dir, 50);
+            } else if (rc.canBuildRobot(toBuild, dir, 1)) {
+                rc.buildRobot(toBuild, dir, 1);
+            } else {
+                break;
+            }
+        }
     }
 
     static void runPolitician() throws GameActionException {
@@ -82,6 +90,19 @@ public strictfp class v1 {
     }
 
     static void runSlanderer() throws GameActionException {
+        Team enemy = rc.getTeam().opponent();
+        int actionRadius = rc.getType().actionRadiusSquared;
+        for (RobotInfo robot: rc.senseNearbyRobots(actionRadius, enemy)) {
+          if (robot.type == RobotType.MUCKRAKER) {
+            System.out.println("get me out bro");
+            Direction enemy_direction = robot.location.directionTo(robot.location);
+            final Direction move = enemy_direction.opposite();
+            if (tryMove(move)) {
+              System.out.println("I moved");
+              return;
+            }
+          }
+        }
         if (tryMove(randomDirection()))
             System.out.println("I moved!");
     }
