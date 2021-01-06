@@ -1,7 +1,7 @@
 package examplefuncsplayer;
 import battlecode.common.*;
 
-public strictfp class v1 {
+public strictfp class RobotPlayer {
     static RobotController rc;
 
     static final RobotType[] spawnableRobot = {
@@ -44,7 +44,7 @@ public strictfp class v1 {
             try {
                 // Here, we've separated the controls into a different method for each RobotType.
                 // You may rewrite this into your own control structure if you wish.
-                System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
+                //System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
                 switch (rc.getType()) {
                     case ENLIGHTENMENT_CENTER: runEnlightenmentCenter(); break;
                     case POLITICIAN:           runPolitician();          break;
@@ -63,15 +63,27 @@ public strictfp class v1 {
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
-        RobotType toBuild = randomSpawnableRobotType();
-        for (Direction dir : directions) {
-            if (rc.canBuildRobot(toBuild, dir, 50) && toBuild == RobotType.POLITICIAN) {
-                rc.buildRobot(toBuild, dir, 50);
-            } else if (rc.canBuildRobot(toBuild, dir, 1)) {
-                rc.buildRobot(toBuild, dir, 1);
-            } else {
-                break;
+        if (turnCount <= 8) {
+          for (Direction dir : directions) {
+            if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
+              rc.buildRobot(RobotType.MUCKRAKER, dir, 1);
+              break;
             }
+          }
+        }
+        else {
+          RobotType toBuild = randomSpawnableRobotType();
+          for (Direction dir : directions) {
+              if (rc.canBuildRobot(toBuild, dir, 50) && toBuild == RobotType.POLITICIAN) {
+                  rc.buildRobot(toBuild, dir, 50);
+                  break;
+              } else if (rc.canBuildRobot(toBuild, dir, 1)) {
+                  rc.buildRobot(toBuild, dir, 1);
+                  break;
+              } else {
+                  break;
+              }
+           }
         }
     }
 
@@ -85,8 +97,9 @@ public strictfp class v1 {
             System.out.println("empowered");
             return;
         }
-        if (tryMove(randomDirection()))
+        if (tryMove(randomDirection())){
             System.out.println("I moved!");
+        }
     }
 
     static void runSlanderer() throws GameActionException {
@@ -112,7 +125,7 @@ public strictfp class v1 {
         int actionRadius = rc.getType().actionRadiusSquared;
         for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
             if (robot.type.canBeExposed()) {
-                // It's a slanderer... go get them!
+                //It's a slanderer... go get them!
                 if (rc.canExpose(robot.location)) {
                     System.out.println("e x p o s e d");
                     rc.expose(robot.location);
@@ -120,8 +133,9 @@ public strictfp class v1 {
                 }
             }
         }
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
+        if (tryMove(randomDirection())){
+              System.out.println("I moved!");
+        }
     }
 
     /**
@@ -150,7 +164,7 @@ public strictfp class v1 {
      * @throws GameActionException
      */
     static boolean tryMove(Direction dir) throws GameActionException {
-        System.out.println("I am trying to move " + dir + "; " + rc.isReady() + " " + rc.getCooldownTurns() + " " + rc.canMove(dir));
+        //System.out.println("I am trying to move " + dir + "; " + rc.isReady() + " " + rc.getCooldownTurns() + " " + rc.canMove(dir));
         if (rc.canMove(dir)) {
             rc.move(dir);
             return true;
