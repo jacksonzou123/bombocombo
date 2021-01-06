@@ -37,14 +37,14 @@ public strictfp class v1 {
 
         turnCount = 0;
 
-        System.out.println("I'm a " + rc.getType() + " and I just got created!");
+        //System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
             turnCount += 1;
             // Try/catch blocks stop unhandled exceptions, which cause your robot to freeze
             try {
                 // Here, we've separated the controls into a different method for each RobotType.
                 // You may rewrite this into your own control structure if you wish.
-                System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
+                //System.out.println("I'm a " + rc.getType() + "! Location " + rc.getLocation());
                 switch (rc.getType()) {
                     case ENLIGHTENMENT_CENTER: runEnlightenmentCenter(); break;
                     case POLITICIAN:           runPolitician();          break;
@@ -56,15 +56,23 @@ public strictfp class v1 {
                 Clock.yield();
 
             } catch (Exception e) {
-                System.out.println(rc.getType() + " Exception");
+                //System.out.println(rc.getType() + " Exception");
                 e.printStackTrace();
             }
         }
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
-        RobotType toBuild = randomSpawnableRobotType();
-        int influence = 50;
+	    if (rc.canBuildRobot(RobotType.MUCKRAKER, directions[0], 1)){
+	    	System.out.println(turnCount);
+	    	if (turnCount <= 8){
+	    		System.out.println(turnCount);
+	    		for (int i = 0; i < directions.length; i ++){
+	    			rc.buildRobot(RobotType.MUCKRAKER, directions[i], 1);
+	    			System.out.println("SPAWNED");
+	    		}
+	    	}
+	    }
     }
 
     static void runPolitician() throws GameActionException {
@@ -72,18 +80,21 @@ public strictfp class v1 {
         int actionRadius = rc.getType().actionRadiusSquared;
         RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
         if (attackable.length != 0 && rc.canEmpower(actionRadius)) {
-            System.out.println("empowering...");
+            //System.out.println("empowering...");
             rc.empower(actionRadius);
-            System.out.println("empowered");
+            //System.out.println("empowered");
             return;
         }
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
+        if (tryMove(randomDirection())){
+            //System.out.println("I moved!");
+        }
     }
 
     static void runSlanderer() throws GameActionException {
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
+
+        if (tryMove(randomDirection())){
+            //System.out.println("I moved!");
+        }
     }
 
     static void runMuckraker() throws GameActionException {
@@ -93,14 +104,15 @@ public strictfp class v1 {
             if (robot.type.canBeExposed()) {
                 // It's a slanderer... go get them!
                 if (rc.canExpose(robot.location)) {
-                    System.out.println("e x p o s e d");
+                    //System.out.println("e x p o s e d");
                     rc.expose(robot.location);
                     return;
                 }
             }
         }
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
+        if (tryMove(randomDirection())){
+            //System.out.println("I moved!");
+        }
     }
 
     /**
@@ -129,7 +141,7 @@ public strictfp class v1 {
      * @throws GameActionException
      */
     static boolean tryMove(Direction dir) throws GameActionException {
-        System.out.println("I am trying to move " + dir + "; " + rc.isReady() + " " + rc.getCooldownTurns() + " " + rc.canMove(dir));
+        //System.out.println("I am trying to move " + dir + "; " + rc.isReady() + " " + rc.getCooldownTurns() + " " + rc.canMove(dir));
         if (rc.canMove(dir)) {
             rc.move(dir);
             return true;
