@@ -107,8 +107,9 @@ public strictfp class RobotPlayer {
 
     static void runSlanderer() throws GameActionException {
         Team enemy = rc.getTeam().opponent();
+        //check all nearby enemy robots
         for (RobotInfo robot: rc.senseNearbyRobots(-1, enemy)) {
-          //System.out.println("get me out bro");
+          //if enemy robot is a muckraker, run the opposite direction
           if (robot.getType() == RobotType.MUCKRAKER) {
             Direction enemy_direction = rc.getLocation().directionTo(robot.location);
             final Direction move = enemy_direction.opposite();
@@ -138,10 +139,13 @@ public strictfp class RobotPlayer {
                 }
             }
         }
+        //Check all nearby robots
         for (RobotInfo robot : rc.senseNearbyRobots(-1)) {
+          //check if nearby robot is an allied muckraker with flag != 0
           if (robot.getTeam() == ally && robot.getType() == RobotType.MUCKRAKER && rc.getFlag(robot.getID()) != 0) {
             break;
           }
+          //check if nearby robot is an enemy enlightenment center
           else if (robot.getTeam() == enemy && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
             MapLocation ec = robot.getLocation();
             switch (rc.getLocation().directionTo(ec)) {
@@ -156,6 +160,7 @@ public strictfp class RobotPlayer {
             }
           }
         }
+        //if your flag is 0, you can move, otherwise don't
         if (rc.getFlag(rc.getID()) == 0 && tryMove(randomDirection())){
               //System.out.println("I moved!");
         }
