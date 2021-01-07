@@ -88,6 +88,10 @@ public strictfp class RobotPlayer {
               }
            }
         }
+        // Testing Code for Slanderer
+      if (rc.canBuildRobot(RobotType.SLANDERER, Direction.NORTHEAST, 1)){
+        rc.buildRobot(RobotType.SLANDERER, Direction.NORTHEAST, 1);
+      }
     }
 
     static void runPolitician() throws GameActionException {
@@ -111,10 +115,18 @@ public strictfp class RobotPlayer {
           //System.out.println("get me out bro");
           if (robot.getType() == RobotType.MUCKRAKER) {
             Direction enemy_direction = rc.getLocation().directionTo(robot.location);
-            final Direction move = enemy_direction.opposite();
+            Direction move = enemy_direction.opposite();
             if (tryMove(move)) {
               System.out.println("imma skeddadle");
               //System.out.println("I moved");
+              return;
+            }
+            else if(tryMove(move.rotateLeft())){
+              System.out.println("I skeddaddle the other way");
+              return;
+            }
+            else if(tryMove(move.rotateRight())){
+              System.out.println("I skeddaddle the other other way");
               return;
             }
           }
