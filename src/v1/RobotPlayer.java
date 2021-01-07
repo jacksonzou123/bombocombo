@@ -1,4 +1,4 @@
-package examplefuncsplayer;
+package v1;
 import battlecode.common.*;
 
 public strictfp class RobotPlayer {
@@ -37,7 +37,7 @@ public strictfp class RobotPlayer {
 
         turnCount = 0;
 
-        System.out.println("I'm a " + rc.getType() + " and I just got created!");
+        //System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
             turnCount += 1;
             // Try/catch blocks stop unhandled exceptions, which cause your robot to freeze
@@ -63,7 +63,7 @@ public strictfp class RobotPlayer {
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
-        if (turnCount <= 8) {
+        if (turnCount <= 100) {
           for (Direction dir : directions) {
             if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
               rc.buildRobot(RobotType.MUCKRAKER, dir, 1);
@@ -98,26 +98,28 @@ public strictfp class RobotPlayer {
             return;
         }
         if (tryMove(randomDirection())){
-            System.out.println("I moved!");
+            //System.out.println("I moved!");
         }
     }
 
     static void runSlanderer() throws GameActionException {
         Team enemy = rc.getTeam().opponent();
-        int actionRadius = rc.getType().actionRadiusSquared;
-        for (RobotInfo robot: rc.senseNearbyRobots(actionRadius, enemy)) {
-          if (robot.type == RobotType.MUCKRAKER) {
-            System.out.println("get me out bro");
-            Direction enemy_direction = robot.location.directionTo(robot.location);
+        int sensorRadius = rc.getType().sensorRadiusSquared;
+        for (RobotInfo robot: rc.senseNearbyRobots(sensorRadius, enemy)) {
+          //System.out.println("get me out bro");
+          if (robot.getType() == RobotType.MUCKRAKER) {
+            Direction enemy_direction = rc.getLocation().directionTo(robot.location);
             final Direction move = enemy_direction.opposite();
             if (tryMove(move)) {
-              System.out.println("I moved");
+              System.out.println("imma skeddadle");
+              //System.out.println("I moved");
               return;
             }
           }
         }
-        if (tryMove(randomDirection()))
-            System.out.println("I moved!");
+        if (tryMove(randomDirection())) {
+            //System.out.println("I moved!");
+        }
     }
 
     static void runMuckraker() throws GameActionException {
@@ -134,7 +136,7 @@ public strictfp class RobotPlayer {
             }
         }
         if (tryMove(randomDirection())){
-              System.out.println("I moved!");
+              //System.out.println("I moved!");
         }
     }
 
