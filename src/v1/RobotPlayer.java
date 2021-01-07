@@ -63,6 +63,7 @@ public strictfp class RobotPlayer {
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
+        rc.bid(1);
         if (turnCount <= 100) {
           for (Direction dir : directions) {
             if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
