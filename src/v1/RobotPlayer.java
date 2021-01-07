@@ -63,7 +63,9 @@ public strictfp class RobotPlayer {
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
-        rc.bid(1);
+        if (rc.canBid(1)) {
+          rc.bid(1);
+        }
         if (turnCount <= 100) {
           for (Direction dir : directions) {
             if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
@@ -105,8 +107,7 @@ public strictfp class RobotPlayer {
 
     static void runSlanderer() throws GameActionException {
         Team enemy = rc.getTeam().opponent();
-        int sensorRadius = rc.getType().sensorRadiusSquared;
-        for (RobotInfo robot: rc.senseNearbyRobots(sensorRadius, enemy)) {
+        for (RobotInfo robot: rc.senseNearbyRobots(-1, enemy)) {
           //System.out.println("get me out bro");
           if (robot.getType() == RobotType.MUCKRAKER) {
             Direction enemy_direction = rc.getLocation().directionTo(robot.location);
@@ -124,6 +125,7 @@ public strictfp class RobotPlayer {
     }
 
     static void runMuckraker() throws GameActionException {
+        Team ally = rc.getTeam();
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
         for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
@@ -136,7 +138,25 @@ public strictfp class RobotPlayer {
                 }
             }
         }
-        if (tryMove(randomDirection())){
+        for (RobotInfo robot : rc.senseNearbyRobots(-1)) {
+          if (robot.getTeam() == ally && robot.getType() == RobotType.MUCKRAKER && rc.getFlag(robot.getID()) != 0) {
+            break;
+          }
+          else if (robot.getTeam() == enemy && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+            MapLocation ec = robot.getLocation();
+            switch (rc.getLocation().directionTo(ec)) {
+              case NORTH: if (rc.canSetFlag(1)) rc.setFlag(1); break;
+              case NORTHEAST: if (rc.canSetFlag(2)) rc.setFlag(2); break;
+              case EAST: if (rc.canSetFlag(3)) rc.setFlag(3); break;
+              case SOUTHEAST: if (rc.canSetFlag(4)) rc.setFlag(4); break;
+              case SOUTH: if (rc.canSetFlag(5)) rc.setFlag(5); break;
+              case SOUTHWEST: if (rc.canSetFlag(6)) rc.setFlag(6); break;
+              case WEST: if (rc.canSetFlag(7)) rc.setFlag(7); break;
+              case NORTHWEST: if (rc.canSetFlag(8)) rc.setFlag(8); break;
+            }
+          }
+        }
+        if (rc.getFlag(rc.getID()) == 0 && tryMove(randomDirection())){
               //System.out.println("I moved!");
         }
     }
