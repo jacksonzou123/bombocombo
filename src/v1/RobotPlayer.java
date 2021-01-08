@@ -61,7 +61,7 @@ public strictfp class RobotPlayer {
             }
         }
     }
-    
+
     static void runEnlightenmentCenter() throws GameActionException {
         if (rc.canBid(1)) {
           rc.bid(1);
@@ -103,6 +103,14 @@ public strictfp class RobotPlayer {
             rc.empower(actionRadius);
             System.out.println("empowered");
             return;
+        }
+        //"steal baron" code
+        if (attackable.length != 0){
+          for(RobotInfo ri : attackable){
+            if(ri.getTeam() == Team.NEUTRAL){
+              rc.empower(actionRadius);
+            }
+          }
         }
         if (tryMove(randomDirection())){
             //System.out.println("I moved!");
