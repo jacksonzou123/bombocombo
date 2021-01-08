@@ -61,7 +61,7 @@ public strictfp class RobotPlayer {
             }
         }
     }
-
+    
     static void runEnlightenmentCenter() throws GameActionException {
         if (rc.canBid(1)) {
           rc.bid(1);
