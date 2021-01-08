@@ -75,9 +75,9 @@ public strictfp class RobotPlayer {
           }
         }
         else {
-          RobotType toBuild = randomSpawnableRobotType();
+          RobotType toBuild = RobotType.POLITICIAN;
           for (Direction dir : directions) {
-              if (rc.canBuildRobot(toBuild, dir, 50) && toBuild == RobotType.POLITICIAN) {
+              if (rc.canBuildRobot(toBuild, dir, 50)) {
                   rc.buildRobot(toBuild, dir, 50);
                   break;
               } else if (rc.canBuildRobot(toBuild, dir, 1)) {
@@ -93,16 +93,50 @@ public strictfp class RobotPlayer {
     static void runPolitician() throws GameActionException {
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
-        RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
-        if (attackable.length != 0 && rc.canEmpower(actionRadius)) {
-            System.out.println("empowering...");
-            rc.empower(actionRadius);
-            System.out.println("empowered");
-            return;
+        int sensorRadius = rc.getType().sensorRadiusSquared;
+
+        RobotInfo[] sensibleEnemies = rc.senseNearbyRobots(sensorRadius, enemy);
+        RobotInfo[] attackableEnemies = rc.senseNearbyRobots(actionRadius, enemy);
+        RobotInfo[] team = rc.senseNearbyRobots(sensorRadius, rc.getTeam());
+
+        int flagnum = rc.getFlag(rc.getID());
+        Direction direction = randomDirection();
+
+        // If spots muckraker near enemy EC, calc flag number that directs
+        // politician to enemy EC and update flag number
+        if (flagnum != 0) direction = directions[flagnum];
+        else {
+            for (RobotInfo robot : team) {
+                int otherflagnum = rc.getFlag(robot.getID());
+                if (robot.getType() == RobotType.MUCKRAKER && otherflagnum != 0) {
+                    Direction dirToOther = rc.getLocation().directionTo(robot.location);
+                    flagnum = calcDirUsingMuck(otherflagnum, dirToOther);
+                    if (rc.canSetFlag(flagnum)) rc.setFlag(flagnum);
+                    direction = directions[flagnum];
+                    break;
+                }
+            }
         }
-        if (tryMove(randomDirection())){
-            //System.out.println("I moved!");
+
+        // If spots enemy enlightenment center, move towards it
+        for (RobotInfo robot : sensibleEnemies) {
+            MapLocation enemyLoc = robot.getLocation();
+            if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                direction = rc.getLocation().directionTo(enemyLoc);
+            }
         }
+
+        // Attacks enemy enlightenment center if close enough and able to do so
+        for (RobotInfo robot : attackableEnemies) {
+        MapLocation enemyLoc = robot.getLocation();
+            if (rc.canEmpower(actionRadius) &&
+            robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                System.out.println(rc.getID() + ": ROUND " + turnCount + " ATTACK");
+                rc.empower(actionRadius);
+            }
+        }
+
+        if (!tryMove(direction)) tryMove(randomDirection());
     }
 
     static void runSlanderer() throws GameActionException {
@@ -139,25 +173,18 @@ public strictfp class RobotPlayer {
             }
         }
         for (RobotInfo robot : rc.senseNearbyRobots(-1)) {
-          if (robot.getTeam() == ally && robot.getType() == RobotType.MUCKRAKER && rc.getFlag(robot.getID()) != 0) {
-            break;
-          }
-          else if (robot.getTeam() == enemy && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-            MapLocation ec = robot.getLocation();
-            switch (rc.getLocation().directionTo(ec)) {
-              case NORTH: if (rc.canSetFlag(1)) rc.setFlag(1); break;
-              case NORTHEAST: if (rc.canSetFlag(2)) rc.setFlag(2); break;
-              case EAST: if (rc.canSetFlag(3)) rc.setFlag(3); break;
-              case SOUTHEAST: if (rc.canSetFlag(4)) rc.setFlag(4); break;
-              case SOUTH: if (rc.canSetFlag(5)) rc.setFlag(5); break;
-              case SOUTHWEST: if (rc.canSetFlag(6)) rc.setFlag(6); break;
-              case WEST: if (rc.canSetFlag(7)) rc.setFlag(7); break;
-              case NORTHWEST: if (rc.canSetFlag(8)) rc.setFlag(8); break;
+            if (robot.getTeam() == ally && robot.getType() == RobotType.MUCKRAKER && rc.getFlag(robot.getID()) != 0) {
+                break;
             }
-          }
+            else if (robot.getTeam() == enemy && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+                MapLocation enemyCenter = robot.getLocation();
+                int flagnum = flagnumFromDir(rc.getLocation().directionTo(enemyCenter));
+                if (rc.canSetFlag(flagnum)) rc.setFlag(flagnum);
+
+            }
         }
         if (rc.getFlag(rc.getID()) == 0 && tryMove(randomDirection())){
-              //System.out.println("I moved!");
+            //System.out.println("I moved!");
         }
     }
 
@@ -193,4 +220,18 @@ public strictfp class RobotPlayer {
             return true;
         } else return false;
     }
+
+    // Pass in dir, sets flag to number based on index of dir in directions[]
+    static int flagnumFromDir(Direction dir) throws GameActionException {
+        return java.util.Arrays.asList(directions).indexOf(dir);
+    }
+
+    // Calculates path to move based on a triangle formed by two
+    // vertices: direction from a robot to Muck, direction from Muck to enemy EC
+    static int calcDirUsingMuck(int otherflagnum, Direction toMuck) throws GameActionException {
+        if (directions[otherflagnum] == toMuck) return otherflagnum;
+        int flagnum = (Math.min(otherflagnum, flagnumFromDir(toMuck)) + 1) % 8;
+        return flagnum;
+    }
 }
+
