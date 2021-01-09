@@ -121,7 +121,6 @@ public strictfp class RobotPlayer {
                 }
             }
         }
-<<<<<<< HEAD
 
         // If spots enemy enlightenment center, move towards it
         for (RobotInfo robot : sensibleEnemies) {
@@ -139,22 +138,13 @@ public strictfp class RobotPlayer {
                 System.out.println(rc.getID() + ": ROUND " + turnCount + " ATTACK");
                 rc.empower(actionRadius);
             }
-=======
-        //"steal baron" code
-        if (attackable.length != 0){
-          for(RobotInfo ri : attackable){
-            if(ri.getTeam() == Team.NEUTRAL){
-              rc.empower(actionRadius);
-            }
-          }
-        }
         if (tryMove(randomDirection())){
             //System.out.println("I moved!");
->>>>>>> 3d7e9b978ceb2800a9c84f3ba70920a0b04dc4b5
         }
 
         if (!tryMove(direction)) tryMove(randomDirection());
     }
+  }
 
     static void runSlanderer() throws GameActionException {
         Team enemy = rc.getTeam().opponent();
@@ -200,7 +190,6 @@ public strictfp class RobotPlayer {
         }
         //Check all nearby robots
         for (RobotInfo robot : rc.senseNearbyRobots(-1)) {
-<<<<<<< HEAD
             if (robot.getTeam() == ally && robot.getType() == RobotType.MUCKRAKER && rc.getFlag(robot.getID()) != 0) {
                 break;
             }
@@ -209,7 +198,6 @@ public strictfp class RobotPlayer {
                 int flagnum = flagnumFromDir(rc.getLocation().directionTo(enemyCenter));
                 if (rc.canSetFlag(flagnum)) rc.setFlag(flagnum);
 
-=======
           //check if nearby robot is an allied muckraker with flag != 0
           if (robot.getTeam() == ally && robot.getType() == RobotType.MUCKRAKER && rc.getFlag(robot.getID()) != 0) {
             break;
@@ -226,7 +214,6 @@ public strictfp class RobotPlayer {
               case SOUTHWEST: if (rc.canSetFlag(6)) rc.setFlag(6); break;
               case WEST: if (rc.canSetFlag(7)) rc.setFlag(7); break;
               case NORTHWEST: if (rc.canSetFlag(8)) rc.setFlag(8); break;
->>>>>>> 3d7e9b978ceb2800a9c84f3ba70920a0b04dc4b5
             }
         }
         //if your flag is 0, you can move, otherwise don't
@@ -234,6 +221,8 @@ public strictfp class RobotPlayer {
             //System.out.println("I moved!");
         }
     }
+  }
+}
 
     /**
      * Returns a random Direction.
@@ -281,4 +270,3 @@ public strictfp class RobotPlayer {
         return flagnum;
     }
 }
-
