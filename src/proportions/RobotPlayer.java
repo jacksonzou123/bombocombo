@@ -36,6 +36,7 @@ public strictfp class RobotPlayer {
         RobotPlayer.rc = rc;
 
         turnCount = 0;
+        MapLocation home;
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
@@ -123,8 +124,7 @@ public strictfp class RobotPlayer {
         Team ally = rc.getTeam();
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
-        MapLocation home;
-        // Finding enlightenment 
+        // Finding enlightenment
         for (RobotInfo robot: rc.senseNearbyRobots(actionRadius, ally)){
         	if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER){
         		home = robot.location;
