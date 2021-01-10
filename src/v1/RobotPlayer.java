@@ -225,7 +225,7 @@ public strictfp class RobotPlayer {
   */
 
 
-  
+
   public static void bug(){
     while(true){
       MapLocation target = null;

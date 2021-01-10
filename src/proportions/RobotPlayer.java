@@ -21,6 +21,7 @@ public strictfp class RobotPlayer {
         Direction.NORTHWEST,
     };
 
+    static MapLocation home;
     static int turnCount;
     //HELLO
 
@@ -36,7 +37,6 @@ public strictfp class RobotPlayer {
         RobotPlayer.rc = rc;
 
         turnCount = 0;
-        MapLocation home;
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
