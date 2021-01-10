@@ -127,8 +127,7 @@ public strictfp class RobotPlayer {
         // Finding enlightenment
         for (RobotInfo robot: rc.senseNearbyRobots(actionRadius, ally)){
         	if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER){
-        		home = robot.location;
-        		System.out.println(home.x + " " + home.y);
+        		//System.out.println(home.x + " " + home.y);
         	}
         }
         for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
