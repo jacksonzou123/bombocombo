@@ -23,6 +23,9 @@ public strictfp class RobotPlayer {
 
     static MapLocation home;
     static int turnCount;
+    static MapLocation home;
+    static MapLocation neutralCenter;
+
     //HELLO
 
     /**
@@ -37,6 +40,10 @@ public strictfp class RobotPlayer {
         RobotPlayer.rc = rc;
 
         turnCount = 0;
+<<<<<<< HEAD
+        
+=======
+>>>>>>> 5d54b0a07c9ac9c665ee9323eeff0551c714e2a1
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
@@ -77,6 +84,7 @@ public strictfp class RobotPlayer {
         }
     }
 
+    
 
 
     static void runPolitician() throws GameActionException {
@@ -140,7 +148,7 @@ public strictfp class RobotPlayer {
                 }
             }
         }
-
+        
         //Check all nearby robots
         for (RobotInfo robot : rc.senseNearbyRobots(-1)) {
           //check if nearby robot is an allied muckraker with flag != 0
@@ -148,23 +156,40 @@ public strictfp class RobotPlayer {
             break;
           }
           //check if nearby robot is an enemy enlightenment center
-          else if (robot.getTeam() == enemy && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-            MapLocation ec = robot.getLocation();
-            switch (rc.getLocation().directionTo(ec)) {
-              case NORTH: if (rc.canSetFlag(1)) rc.setFlag(1); break;
-              case NORTHEAST: if (rc.canSetFlag(2)) rc.setFlag(2); break;
-              case EAST: if (rc.canSetFlag(3)) rc.setFlag(3); break;
-              case SOUTHEAST: if (rc.canSetFlag(4)) rc.setFlag(4); break;
-              case SOUTH: if (rc.canSetFlag(5)) rc.setFlag(5); break;
-              case SOUTHWEST: if (rc.canSetFlag(6)) rc.setFlag(6); break;
-              case WEST: if (rc.canSetFlag(7)) rc.setFlag(7); break;
-              case NORTHWEST: if (rc.canSetFlag(8)) rc.setFlag(8); break;
-            }
+          	else if (robot.getTeam() == enemy && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
+	            MapLocation ec = robot.getLocation();
+	            switch (rc.getLocation().directionTo(ec)) {
+	              case NORTH: if (rc.canSetFlag(1)) rc.setFlag(1); break;
+	              case NORTHEAST: if (rc.canSetFlag(2)) rc.setFlag(2); break;
+	              case EAST: if (rc.canSetFlag(3)) rc.setFlag(3); break;
+	              case SOUTHEAST: if (rc.canSetFlag(4)) rc.setFlag(4); break;
+	              case SOUTH: if (rc.canSetFlag(5)) rc.setFlag(5); break;
+	              case SOUTHWEST: if (rc.canSetFlag(6)) rc.setFlag(6); break;
+	              case WEST: if (rc.canSetFlag(7)) rc.setFlag(7); break;
+	              case NORTHWEST: if (rc.canSetFlag(8)) rc.setFlag(8); break;
+	            }
+          }
+          // If there is neutral enlightment center, set flag 9
+          	else if (robot.getTeam() == Team.NEUTRAL){
+          		neutralCenter = robot.location;
+          		System.out.println("There is a neutral center near here!");
+          		if (rc.canSetFlag(9)) rc.setFlag(9); break;
           }
         }
         //if your flag is 0, you can move, otherwise don't
         if (rc.getFlag(rc.getID()) == 0 && tryMove(randomDirection())){
               //System.out.println("I moved!");
+        }
+        // If flag is 9, you move home
+        if (rc.getFlag(rc.getID()) == 9 && tryMove(rc.getLocation().directionTo(home))){
+        	if (rc.getLocation().distanceSquaredTo(home) <= RobotType.ENLIGHTENMENT_CENTER.actionRadiusSquared){
+        		if (rc.canSetFlag(0)){
+        			rc.setFlag(0);
+        		}
+        		return;
+        	}
+        	
+
         }
     }
 
