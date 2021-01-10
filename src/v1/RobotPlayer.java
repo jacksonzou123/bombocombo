@@ -1,4 +1,4 @@
-package v1;
+ package v1;
 import battlecode.common.*;
 
 public strictfp class RobotPlayer {
@@ -88,10 +88,6 @@ public strictfp class RobotPlayer {
               }
            }
         }
-        // Testing Code for Slanderer
-      if (rc.canBuildRobot(RobotType.SLANDERER, Direction.NORTHEAST, 1)){
-        rc.buildRobot(RobotType.SLANDERER, Direction.NORTHEAST, 1);
-      }
     }
 
     static void runPolitician() throws GameActionException {
