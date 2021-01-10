@@ -142,6 +142,7 @@ public strictfp class RobotPlayer {
 
         if (!tryMove(direction)) tryMove(randomDirection());
     }
+  }
 
     static void runSlanderer() throws GameActionException {
         Team enemy = rc.getTeam().opponent();
@@ -194,14 +195,14 @@ public strictfp class RobotPlayer {
                 MapLocation enemyCenter = robot.getLocation();
                 int flagnum = flagnumFromDir(rc.getLocation().directionTo(enemyCenter));
                 if (rc.canSetFlag(flagnum)) rc.setFlag(flagnum);
-
-            }
         }
         //if your flag is 0, you can move, otherwise don't
         if (rc.getFlag(rc.getID()) == 0 && tryMove(randomDirection())){
             //System.out.println("I moved!");
         }
     }
+  }
+}
 
     /**
      * Returns a random Direction.
@@ -249,4 +250,3 @@ public strictfp class RobotPlayer {
         return flagnum;
     }
 }
-
