@@ -226,7 +226,7 @@ public strictfp class RobotPlayer {
 
 
 
-  public static void bug(Maplocation target){
+  public static void bug(MapLocation target){
       try{
         basicBug(target);
       } catch (GameActionException e){
@@ -250,7 +250,7 @@ public strictfp class RobotPlayer {
         }
         else{
           if(bugDirection == null){
-            bugDirection = d.rotateRight;
+            bugDirection = d.rotateRight();
           }
           for (int i = 0; i < 8; i++){
             if(rc.canMove(bugDirection) && rc.sensePassability(rc.getLocation().add(bugDirection)) >= passabilityThreshold){
