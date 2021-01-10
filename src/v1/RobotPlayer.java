@@ -227,14 +227,11 @@ public strictfp class RobotPlayer {
 
 
   public static void bug(Maplocation target){
-    while(true){
       try{
         basicBug(target);
       } catch (GameActionException e){
         e.printStackTrace();
       }
-      Clock.yield();
-    }
   }
 
   static final double passabilityThreshold = 0.7;
