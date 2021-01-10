@@ -226,13 +226,12 @@ public strictfp class RobotPlayer {
 
 
 
-  public static void bug(){
+  public static void bug(Maplocation target){
     while(true){
-      MapLocation target = null;
       try{
         basicBug(target);
       } catch (GameActionException e){
-        //do something
+        e.printStackTrace();
       }
       Clock.yield();
     }
