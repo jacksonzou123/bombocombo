@@ -244,4 +244,8 @@ public strictfp class RobotPlayer {
             return true;
         } else return false;
     }
+
+    static MapLocation getLocationFromFlag(int flag);
+
+    static int pushLocationToFlag(MapLocation location);
 }
