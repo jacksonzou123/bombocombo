@@ -134,8 +134,6 @@ public strictfp class RobotPlayer {
                 System.out.println(rc.getID() + ": ROUND " + turnCount + " ATTACK");
                 rc.empower(actionRadius);
             }
-        if (tryMove(randomDirection())){
-            //System.out.println("I moved!");
         }
 
         if (!tryMove(direction)) tryMove(randomDirection());
@@ -193,24 +191,6 @@ public strictfp class RobotPlayer {
                 MapLocation enemyCenter = robot.getLocation();
                 int flagnum = flagnumFromDir(rc.getLocation().directionTo(enemyCenter));
                 if (rc.canSetFlag(flagnum)) rc.setFlag(flagnum);
-
-          //check if nearby robot is an allied muckraker with flag != 0
-          if (robot.getTeam() == ally && robot.getType() == RobotType.MUCKRAKER && rc.getFlag(robot.getID()) != 0) {
-            break;
-          }
-          //check if nearby robot is an enemy enlightenment center
-          else if (robot.getTeam() == enemy && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-            MapLocation ec = robot.getLocation();
-            switch (rc.getLocation().directionTo(ec)) {
-              case NORTH: if (rc.canSetFlag(1)) rc.setFlag(1); break;
-              case NORTHEAST: if (rc.canSetFlag(2)) rc.setFlag(2); break;
-              case EAST: if (rc.canSetFlag(3)) rc.setFlag(3); break;
-              case SOUTHEAST: if (rc.canSetFlag(4)) rc.setFlag(4); break;
-              case SOUTH: if (rc.canSetFlag(5)) rc.setFlag(5); break;
-              case SOUTHWEST: if (rc.canSetFlag(6)) rc.setFlag(6); break;
-              case WEST: if (rc.canSetFlag(7)) rc.setFlag(7); break;
-              case NORTHWEST: if (rc.canSetFlag(8)) rc.setFlag(8); break;
-            }
         }
         //if your flag is 0, you can move, otherwise don't
         if (rc.getFlag(rc.getID()) == 0 && tryMove(randomDirection())){
