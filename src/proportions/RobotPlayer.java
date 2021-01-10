@@ -21,6 +21,7 @@ public strictfp class RobotPlayer {
         Direction.NORTHWEST,
     };
 
+    static MapLocation home;
     static int turnCount;
     static MapLocation home;
     static MapLocation neutralCenter;
@@ -39,7 +40,10 @@ public strictfp class RobotPlayer {
         RobotPlayer.rc = rc;
 
         turnCount = 0;
+<<<<<<< HEAD
         
+=======
+>>>>>>> 5d54b0a07c9ac9c665ee9323eeff0551c714e2a1
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
@@ -131,8 +135,7 @@ public strictfp class RobotPlayer {
         // Finding enlightenment
         for (RobotInfo robot: rc.senseNearbyRobots(actionRadius, ally)){
         	if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER){
-        		home = robot.location;
-        		System.out.println(home.x + " " + home.y);
+        		//System.out.println(home.x + " " + home.y);
         	}
         }
         for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {

@@ -1,4 +1,4 @@
-package best;
+package v2;
 import battlecode.common.*;
 
 public strictfp class RobotPlayer {
@@ -21,8 +21,10 @@ public strictfp class RobotPlayer {
         Direction.NORTHWEST,
     };
 
-    static MapLocation home;
-    static MapLocation enemy;
+    static int homeID;
+    static int enemyID;
+    static MapLocation homeLoc;
+    static MapLocation enemyLoc;
     static int turnCount;
     //HELLO
 
@@ -37,8 +39,10 @@ public strictfp class RobotPlayer {
         // and to get information on its current status.
         RobotPlayer.rc = rc;
 
-        home = null;
-        enemy = null;
+        homeID = -1;
+        enemyID = -1;
+        homeLoc = null;
+        enemyLoc = null;
         turnCount = 0;
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
@@ -69,8 +73,11 @@ public strictfp class RobotPlayer {
 
     static void runEnlightenmentCenter() throws GameActionException {
         //set home equal to its own location
-        if (home == null) {
-          home = rc.getLocation();
+        if (homeID == -1) {
+          homeID = rc.getID();
+        }
+        if (homeLoc == null) {
+          homeLoc = rc.getLocation();
         }
 
         if (rc.canBid(1)) {
@@ -103,10 +110,11 @@ public strictfp class RobotPlayer {
 
     static void runPolitician() throws GameActionException {
         //set home equal to the enlightenment center that built it
-        if (home == null) {
+        if (homeLoc == null) {
           for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
             if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-              home = robot.location;
+              homeID = robot.ID;
+              homeLoc = robot.location;
             }
           }
         }
@@ -126,10 +134,11 @@ public strictfp class RobotPlayer {
     }
 
     static void runSlanderer() throws GameActionException {
-        if (home == null) {
+        if (homeLoc == null) {
           for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
             if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-              home = robot.location;
+              homeID = robot.ID;
+              homeLoc = robot.location;
             }
           }
         }
@@ -154,10 +163,11 @@ public strictfp class RobotPlayer {
     }
 
     static void runMuckraker() throws GameActionException {
-        if (home == null) {
+        if (homeLoc == null) {
           for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
             if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-              home = robot.location;
+              homeID = robot.ID;
+              homeLoc = robot.location;
             }
           }
         }
@@ -234,4 +244,8 @@ public strictfp class RobotPlayer {
             return true;
         } else return false;
     }
+
+    static MapLocation getLocationFromFlag(int flag);
+
+    static int pushLocationToFlag(MapLocation location);
 }
