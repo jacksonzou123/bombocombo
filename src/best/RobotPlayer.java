@@ -21,6 +21,8 @@ public strictfp class RobotPlayer {
         Direction.NORTHWEST,
     };
 
+    static MapLocation home;
+    static MapLocation enemy;
     static int turnCount;
     //HELLO
 
@@ -35,6 +37,8 @@ public strictfp class RobotPlayer {
         // and to get information on its current status.
         RobotPlayer.rc = rc;
 
+        home = null;
+        enemy = null;
         turnCount = 0;
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
@@ -51,6 +55,7 @@ public strictfp class RobotPlayer {
                     case SLANDERER:            runSlanderer();           break;
                     case MUCKRAKER:            runMuckraker();           break;
                 }
+                //System.out.println("HOME:" + home.x + ", " + home.y);
 
                 // Clock.yield() makes the robot wait until the next turn, then it will perform this loop again
                 Clock.yield();
@@ -63,9 +68,15 @@ public strictfp class RobotPlayer {
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
+        //set home equal to its own location
+        if (home == null) {
+          home = rc.getLocation();
+        }
+
         if (rc.canBid(1)) {
           rc.bid(1);
         }
+
         if (turnCount <= 100) {
           for (Direction dir : directions) {
             if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
@@ -91,6 +102,15 @@ public strictfp class RobotPlayer {
     }
 
     static void runPolitician() throws GameActionException {
+        //set home equal to the enlightenment center that built it
+        if (home == null) {
+          for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+            if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+              home = robot.location;
+            }
+          }
+        }
+
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
         RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
@@ -106,6 +126,14 @@ public strictfp class RobotPlayer {
     }
 
     static void runSlanderer() throws GameActionException {
+        if (home == null) {
+          for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+            if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+              home = robot.location;
+            }
+          }
+        }
+
         Team enemy = rc.getTeam().opponent();
         //check all nearby enemy robots
         for (RobotInfo robot: rc.senseNearbyRobots(-1, enemy)) {
@@ -126,6 +154,14 @@ public strictfp class RobotPlayer {
     }
 
     static void runMuckraker() throws GameActionException {
+        if (home == null) {
+          for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+            if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+              home = robot.location;
+            }
+          }
+        }
+
         Team ally = rc.getTeam();
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
