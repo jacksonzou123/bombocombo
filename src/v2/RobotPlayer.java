@@ -322,7 +322,7 @@ public strictfp class RobotPlayer {
             actualLocation = alternative;
         }
 
-        return alternative;
+        return actualLocation;
     }
 
     //returns the int to put into flag based on location given
