@@ -23,12 +23,17 @@ public strictfp class RobotPlayer {
         Direction.WEST,
         Direction.NORTHWEST,
     };
-
+    //store ID and location of an ally and home enlightenment center
     static int homeID;
     static int enemyID;
     static MapLocation homeLoc;
     static MapLocation enemyLoc;
+
+    //mode of unit (determintes what they're doing)
+    static int mode;
+
     static int turnCount;
+
     //HELLO
 
     /**
@@ -47,6 +52,8 @@ public strictfp class RobotPlayer {
         homeLoc = null;
         enemyLoc = null;
         turnCount = 0;
+        mode = 0;
+
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
@@ -158,6 +165,14 @@ public strictfp class RobotPlayer {
               //System.out.println("I moved");
               return;
             }
+            else if(tryMove(move.rotateLeft())){
+              System.out.println("I skeddaddle the other way");
+              return;
+            }
+            else if(tryMove(move.rotateRight())){
+              System.out.println("I skeddaddle the other other way");
+              return;
+            }
           }
         }
         if (tryMove(randomDirection())) {
@@ -166,15 +181,6 @@ public strictfp class RobotPlayer {
     }
 
     static void runMuckraker() throws GameActionException {
-        if (homeLoc == null) {
-          for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
-            if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-              homeID = robot.ID;
-              homeLoc = robot.location;
-            }
-          }
-        }
-
         Team ally = rc.getTeam();
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
@@ -188,30 +194,70 @@ public strictfp class RobotPlayer {
                 }
             }
         }
-        //Check all nearby robots
-        for (RobotInfo robot : rc.senseNearbyRobots(-1)) {
-          //check if nearby robot is an allied muckraker with flag != 0
-          if (robot.getTeam() == ally && robot.getType() == RobotType.MUCKRAKER && rc.getFlag(robot.getID()) != 0) {
-            break;
-          }
-          //check if nearby robot is an enemy enlightenment center
-          else if (robot.getTeam() == enemy && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-            MapLocation ec = robot.getLocation();
-            switch (rc.getLocation().directionTo(ec)) {
-              case NORTH: if (rc.canSetFlag(1)) rc.setFlag(1); break;
-              case NORTHEAST: if (rc.canSetFlag(2)) rc.setFlag(2); break;
-              case EAST: if (rc.canSetFlag(3)) rc.setFlag(3); break;
-              case SOUTHEAST: if (rc.canSetFlag(4)) rc.setFlag(4); break;
-              case SOUTH: if (rc.canSetFlag(5)) rc.setFlag(5); break;
-              case SOUTHWEST: if (rc.canSetFlag(6)) rc.setFlag(6); break;
-              case WEST: if (rc.canSetFlag(7)) rc.setFlag(7); break;
-              case NORTHWEST: if (rc.canSetFlag(8)) rc.setFlag(8); break;
+
+        //scouting mode
+        //enemyLoc should be NULL in this mode
+        if (mode == 0) {
+            //set home location on spawn
+            if (homeLoc == null) {
+              for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+                if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+                  homeID = robot.ID;
+                  homeLoc = robot.location;
+                }
+              }
             }
-          }
+            //runs if home does not have target location
+            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+                for (RobotInfo robot: rc.senseNearbyRobots(-1, enemy)) {
+                    if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+                        enemyLoc = robot.location;
+                        enemyID = robot.ID;
+                        rc.setFlag(pushLocationToFlag(robot.location));
+                        mode = 1;
+                    }
+                }
+                if (tryMove(randomDirection())){
+                      //System.out.println("I moved!");
+                }
+            }
+            //runs if home already has target location
+            else {
+                mode = 2;
+                if (tryMove(randomDirection())){
+                      //System.out.println("I moved!");
+                }
+            }
         }
-        //if your flag is 0, you can move, otherwise don't
-        if (rc.getFlag(rc.getID()) == 0 && tryMove(randomDirection())){
-              //System.out.println("I moved!");
+
+        //return mode
+        //flag is set to location of enemy ec
+        if (mode == 1) {
+            //runs if home does not have target location
+            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+                Direction toHome = rc.getLocation().directionTo(homeLoc);
+                if (tryMove(toHome)) {
+                    return;
+                }
+                if (tryMove(toHome.rotateLeft())) {
+                    return;
+                }
+                if (tryMove(toHome.rotateRight())) {
+                    return;
+                }
+            }
+            //runs if home does have target location
+            else {
+                mode = 2;
+            }
+        }
+
+        //random mode
+        //already did its job, walking around randomly
+        if (mode == 2) {
+            if (tryMove(randomDirection())){
+                  //System.out.println("I moved!");
+            }
         }
     }
 
@@ -248,7 +294,9 @@ public strictfp class RobotPlayer {
         } else return false;
     }
 
+    //gets the location
     static MapLocation getLocationFromFlag(int flag) {
+
         MapLocation currentLocation = rc.getLocation();
         int offsetX = currentLocation.x / 128;
         int offsetY = currentLocation.y / 128;
@@ -277,7 +325,8 @@ public strictfp class RobotPlayer {
         return alternative;
     }
 
+    //returns the int to put into flag based on location given
     static int pushLocationToFlag(MapLocation location) {
-        return (location.x % 128) * 128 + (location.y & 128);
+        return (location.x % 128) * 128 + (location.y % 128);
     }
 }
