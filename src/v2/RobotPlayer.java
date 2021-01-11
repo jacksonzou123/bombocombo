@@ -1,6 +1,9 @@
 package v2;
 import battlecode.common.*;
 
+
+//THIS VERSION IS WORKING ON BASIC IMPLEMENTATION OF FLAGS:
+//  basic encoding and decoding of location of flags
 public strictfp class RobotPlayer {
     static RobotController rc;
 
@@ -245,7 +248,36 @@ public strictfp class RobotPlayer {
         } else return false;
     }
 
-    static MapLocation getLocationFromFlag(int flag);
+    static MapLocation getLocationFromFlag(int flag) {
+        MapLocation currentLocation = rc.getLocation();
+        int offsetX = currentLocation.x / 128;
+        int offsetY = currentLocation.y / 128;
 
-    static int pushLocationToFlag(MapLocation location);
+        int targetX = (flag / 128) % 128;
+        int targetY = flag % 128;
+        MapLocation actualLocation = new MapLocation(offsetX * 128 + targetX, offsetY * 128 + targetY);
+
+        MapLocation alternative = actualLocation.translate(-128, 0);
+        if (rc.getLocation().distanceSquaredTo(alternative) < rc.getLocation().distanceSquaredTo(actualLocation)) {
+            actualLocation = alternative;
+        }
+        alternative = actualLocation.translate(128, 0);
+        if (rc.getLocation().distanceSquaredTo(alternative) < rc.getLocation().distanceSquaredTo(actualLocation)) {
+            actualLocation = alternative;
+        }
+        alternative = actualLocation.translate(0, -128);
+        if (rc.getLocation().distanceSquaredTo(alternative) < rc.getLocation().distanceSquaredTo(actualLocation)) {
+            actualLocation = alternative;
+        }
+        alternative = actualLocation.translate(0, 128);
+        if (rc.getLocation().distanceSquaredTo(alternative) < rc.getLocation().distanceSquaredTo(actualLocation)) {
+            actualLocation = alternative;
+        }
+
+        return alternative;
+    }
+
+    static int pushLocationToFlag(MapLocation location) {
+        return (location.x % 128) * 128 + (location.y & 128);
+    }
 }
