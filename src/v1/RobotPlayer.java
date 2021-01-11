@@ -147,19 +147,10 @@ public strictfp class RobotPlayer {
       if (robot.getType() == RobotType.MUCKRAKER) {
         Direction enemy_direction = rc.getLocation().directionTo(robot.location);
         Direction move = enemy_direction.opposite();
-        if (tryMove(move)) {
-          System.out.println("imma skeddadle");
-          //System.out.println("I moved");
+        if (smartMove(move)) {
           return;
         }
-        else if(tryMove(move.rotateLeft())){
-          System.out.println("I skeddaddle the other way");
-          return;
-        }
-        else if(tryMove(move.rotateRight())){
-          System.out.println("I skeddaddle the other other way");
-          return;
-        }
+
       }
     }
     if (tryMove(randomDirection())) {
@@ -284,5 +275,22 @@ public strictfp class RobotPlayer {
     if (directions[otherflagnum] == toMuck) return otherflagnum;
     int flagnum = (Math.min(otherflagnum, flagnumFromDir(toMuck)) + 1) % 8;
     return flagnum;
+  }
+
+  static boolean smartMove(Direction dir) throws GameActionException{
+  	if (tryMove(dir)) {
+          System.out.println("imma skeddadle");
+          //System.out.println("I moved");
+          return true;
+        }
+        else if(tryMove(dir.rotateLeft())){
+          System.out.println("I skeddaddle the other way");
+          return true;
+        }
+        else if(tryMove(dir.rotateRight())){
+          System.out.println("I skeddaddle the other other way");
+          return true;
+        }
+        return false;
   }
 }

@@ -71,8 +71,8 @@ public strictfp class RobotPlayer {
         }
         if (turnCount <= 60) {
           for (Direction dir : directions) {
-            if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
-              rc.buildRobot(RobotType.MUCKRAKER, dir, 1);
+            if (rc.canBuildRobot(RobotType.SLANDERER, dir, 1)) {
+              rc.buildRobot(RobotType.SLANDERER, dir, 1);
               break;
             }
           }
@@ -103,18 +103,8 @@ public strictfp class RobotPlayer {
           if (robot.getType() == RobotType.MUCKRAKER) {
             Direction enemy_direction = rc.getLocation().directionTo(robot.location);
             Direction move = enemy_direction.opposite();
-            if (tryMove(move)) {
-              System.out.println("imma skeddadle");
-              //System.out.println("I moved");
-              return;
-            }
-            else if(tryMove(move.rotateLeft())){
-              System.out.println("I skeddaddle the other way");
-              return;
-            }
-            else if(tryMove(move.rotateRight())){
-              System.out.println("I skeddaddle the other other way");
-              return;
+            if (smartMove(move)) {
+             	return; 
             }
           }
         }
@@ -220,4 +210,21 @@ public strictfp class RobotPlayer {
             return true;
         } else return false;
     }
+
+    static boolean smartMove(Direction dir) throws GameActionException{
+  	if (tryMove(dir)) {
+          System.out.println("imma skeddadle");
+          //System.out.println("I moved");
+          return true;
+        }
+        else if(tryMove(dir.rotateLeft())){
+          System.out.println("I skeddaddle the other way");
+          return true;
+        }
+        else if(tryMove(dir.rotateRight())){
+          System.out.println("I skeddaddle the other other way");
+          return true;
+        }
+        return false;
+  }
 }
