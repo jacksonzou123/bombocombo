@@ -94,13 +94,17 @@ public strictfp class RobotPlayer {
         } else {
           RobotType toBuild = randomSpawnableRobotType();
           for (Direction dir : directions) {
-              if (rc.canBuildRobot(toBuild, dir, 50) && toBuild == RobotType.POLITICIAN) {
-                  rc.buildRobot(toBuild, dir, 50);
+              if (rc.canBuildRobot(toBuild, dir, 150) && toBuild == RobotType.POLITICIAN) {
+                  rc.buildRobot(toBuild, dir, 150);
                   break;
-              } else if (rc.canBuildRobot(toBuild, dir, 1)) {
+              } else if (rc.canBuildRobot(toBuild, dir, 41) && toBuild == RobotType.SLANDERER) {
+                  rc.buildRobot(toBuild, dir, 41);
+                  break;
+              } else if (rc.canBuildRobot(toBuild, dir, 1) && toBuild == RobotType.MUCKRAKER) {
                   rc.buildRobot(toBuild, dir, 1);
                   break;
-              } else {
+              }
+                else {
                   break;
               }
            }
@@ -134,22 +138,26 @@ public strictfp class RobotPlayer {
         }
 
         if (enemyLoc == null) {
-            int ecFlag = rc.getFlag(homeID);
-            if (ecFlag != 0) {
-                if (rc.canSetFlag(ecFlag)) rc.setFlag(ecFlag);
-                enemyLoc = getLocationFromFlag(ecFlag);
+            if (rc.canGetFlag(homeID)) {
+                int ecFlag = rc.getFlag(homeID);
+                if (ecFlag != 0) {
+                    if (rc.canSetFlag(ecFlag)) rc.setFlag(ecFlag);
+                    enemyLoc = getLocationFromFlag(ecFlag);
+                }
             }
         }
 
-        // Team enemy = rc.getTeam().opponent();
-        // int actionRadius = rc.getType().actionRadiusSquared;
-        // RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
-        // if (attackable.length != 0 && rc.canEmpower(actionRadius)) {
-        //     System.out.println("empowering...");
-        //     rc.empower(actionRadius);
-        //     System.out.println("empowered");
-        //     return;
-        // }
+        Team enemy = rc.getTeam().opponent();
+        int actionRadius = rc.getType().actionRadiusSquared;
+        for (RobotInfo robot: rc.senseNearbyRobots(actionRadius, enemy)) {
+            if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+                if(rc.canEmpower(actionRadius)) {
+                    System.out.println("jeff say go attek");
+                    rc.empower(actionRadius);
+                    return;
+                }
+            }
+        }
 
         // if it has an enemyLoc, move towards enemyLoc
         if (enemyLoc != null) {
@@ -180,16 +188,16 @@ public strictfp class RobotPlayer {
             Direction enemy_direction = rc.getLocation().directionTo(robot.location);
             final Direction move = enemy_direction.opposite();
             if (tryMove(move)) {
-              System.out.println("imma skeddadle");
+              //System.out.println("imma skeddadle");
               //System.out.println("I moved");
               return;
             }
             else if(tryMove(move.rotateLeft())){
-              System.out.println("I skeddaddle the other way");
+              //System.out.println("I skeddaddle the other way");
               return;
             }
             else if(tryMove(move.rotateRight())){
-              System.out.println("I skeddaddle the other other way");
+              //System.out.println("I skeddaddle the other other way");
               return;
             }
           }
@@ -207,7 +215,7 @@ public strictfp class RobotPlayer {
             if (robot.type.canBeExposed()) {
                 //It's a slanderer... go get them!
                 if (rc.canExpose(robot.location)) {
-                    System.out.println("e x p o s e d");
+                    //System.out.println("e x p o s e d");
                     rc.expose(robot.location);
                     return;
                 }
