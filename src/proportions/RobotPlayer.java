@@ -24,7 +24,9 @@ public strictfp class RobotPlayer {
     static MapLocation home;
     static int turnCount;
     static MapLocation neutralCenter;
-
+    static int neutralID;
+    static int enemyID;
+    static MapLocation enemyLoc;
     //HELLO
 
     /**
@@ -38,7 +40,12 @@ public strictfp class RobotPlayer {
         // and to get information on its current status.
         RobotPlayer.rc = rc;
 
+        enemyID = -1;
+        enemyLoc = null;
+        neutralCenter = null;
+        neutralID = -1;
         turnCount = 0;
+        mode = 0;
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
@@ -66,17 +73,38 @@ public strictfp class RobotPlayer {
     }
 
     static void runEnlightenmentCenter() throws GameActionException {
+    	Team ally = rc.getTeam();
+        Team enemy = rc.getTeam().opponent();
+        int actionRadius = rc.getType().actionRadiusSquared;
         if (rc.canBid(1)) {
           rc.bid(1);
         }
-        if (turnCount <= 60) {
+        if (turnCount <= 50) {
           for (Direction dir : directions) {
-            if (rc.canBuildRobot(RobotType.SLANDERER, dir, 1)) {
-              rc.buildRobot(RobotType.SLANDERER, dir, 1);
+            if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
+              rc.buildRobot(RobotType.MUCKRAKER, dir, 1);
               break;
             }
           }
         }
+
+        // If muckraker has a flag thats a location
+        for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, ally)){
+        	if (robot.getType() == RobotType.MUCKRAKER){
+        		int roboID = robot.ID;
+        		if (rc.canGetFlag(roboID)){
+        			if (checkIfFlagIsLocation(rc.getFlag(roboID))){
+						if (rc.canSetFlag(rc.getFlag(roboID))) rc.setFlag(rc.getFlag(roboID));
+	        		}
+        		}
+        	}
+        }
+        if (checkIfFlagIsLocation(rc)){
+	        if (rc.canBuildRobot(RobotType.POLITICIAN, Direction.NORTH, 10)){
+		        rc.buildRobot(RobotType.POLITICIAN, Direction.NORTH, 10);
+		        System.out.println("I built POLITICIAN!");
+		    }
+		}
     }
 
     
@@ -92,6 +120,21 @@ public strictfp class RobotPlayer {
         }
         if (tryMove(randomDirection())){
             //System.out.println("I moved!");
+        }
+        if (neutralCenter == null) {
+            if (rc.canGetFlag(homeID)) {
+                int ecFlag = rc.getFlag(homeID);
+                if (ecFlag != 0) {
+                    if (rc.canSetFlag(ecFlag)) rc.setFlag(ecFlag);
+                    neutralCenter = getLocationFromFlag(ecFlag);
+                }
+            }
+        }
+        if (neutralCenter != null) {
+            Direction dirToEnemy = rc.getLocation().directionTo(neutralCenter);
+            if (!tryMove(dirToEnemy)) {
+                tryMove(randomDirection());
+            }
         }
     }
 
@@ -117,64 +160,90 @@ public strictfp class RobotPlayer {
         Team ally = rc.getTeam();
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
-        // Finding enlightenment
-        for (RobotInfo robot: rc.senseNearbyRobots(actionRadius, ally)){
-        	if (robot.getType() == RobotType.ENLIGHTENMENT_CENTER){
-        		home = robot.location;
-        	}
-        }
         for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
             if (robot.type.canBeExposed()) {
                 //It's a slanderer... go get them!
                 if (rc.canExpose(robot.location)) {
-                    System.out.println("e x p o s e d");
+                    //System.out.println("e x p o s e d");
                     rc.expose(robot.location);
                     return;
                 }
             }
         }
-        
-        //Check all nearby robots
-        for (RobotInfo robot : rc.senseNearbyRobots(-1)) {
-          //check if nearby robot is an allied muckraker with flag != 0
-          if (robot.getTeam() == ally && robot.getType() == RobotType.MUCKRAKER && rc.getFlag(robot.getID()) != 0) {
-            break;
-          }
-          //check if nearby robot is an enemy enlightenment center
-          	else if (robot.getTeam() == enemy && robot.getType() == RobotType.ENLIGHTENMENT_CENTER) {
-	            MapLocation ec = robot.getLocation();
-	            switch (rc.getLocation().directionTo(ec)) {
-	              case NORTH: if (rc.canSetFlag(1)) rc.setFlag(1); break;
-	              case NORTHEAST: if (rc.canSetFlag(2)) rc.setFlag(2); break;
-	              case EAST: if (rc.canSetFlag(3)) rc.setFlag(3); break;
-	              case SOUTHEAST: if (rc.canSetFlag(4)) rc.setFlag(4); break;
-	              case SOUTH: if (rc.canSetFlag(5)) rc.setFlag(5); break;
-	              case SOUTHWEST: if (rc.canSetFlag(6)) rc.setFlag(6); break;
-	              case WEST: if (rc.canSetFlag(7)) rc.setFlag(7); break;
-	              case NORTHWEST: if (rc.canSetFlag(8)) rc.setFlag(8); break;
-	            }
-          }
-          // If there is neutral enlightment center, set flag 9
-          	else if (robot.getTeam() == Team.NEUTRAL){
-          		neutralCenter = robot.location;
-          		System.out.println("There is a neutral center near here!");
-          		if (rc.canSetFlag(9)) rc.setFlag(9); break;
-          }
-        }
-        //if your flag is 0, you can move, otherwise don't
-        if (rc.getFlag(rc.getID()) == 0 && tryMove(randomDirection())){
-              //System.out.println("I moved!");
-        }
-        // If flag is 9, you move home
-        if (rc.getFlag(rc.getID()) == 9 && tryMove(rc.getLocation().directionTo(home))){
-        	if (rc.getLocation().distanceSquaredTo(home) <= RobotType.ENLIGHTENMENT_CENTER.actionRadiusSquared){
-        		if (rc.canSetFlag(0)){
-        			rc.setFlag(0);
-        		}
-        		return;
-        	}
-        	
 
+        //scouting mode
+        //enemyLoc should be NULL in this mode
+        if (mode == 0) {
+            //set home location on spawn
+            if (homeLoc == null) {
+              for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+                if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+                  homeID = robot.ID;
+                  homeLoc = robot.location;
+                }
+              }
+            }
+            //runs if home does not have target location
+            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+                for (RobotInfo robot: rc.senseNearbyRobots(-1)) {
+                    if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+                    	if (robot.getTeam() == enemy){
+                    		enemyLoc = robot.location;
+	                        enemyID = robot.ID;
+	                        rc.setFlag(pushLocationToFlag(robot.location));
+	                        mode = 1;
+                    	}
+                        else if (robot.getTeam() == Team.NEUTRAL){
+			          		neutralCenter = robot.location;
+			          		neutralID = robot.ID;
+			          		rc.setFlag(pushLocationToFlag(robot.location));
+			          		System.out.println("There is a neutral center near here!");
+			          		mode = 1;
+		          		}
+                    }
+                    
+                }
+                if (tryMove(randomDirection())){
+                      //System.out.println("I moved!");
+                }
+            }
+            //runs if home already has target location
+            else {
+                mode = 2;
+                if (tryMove(randomDirection())){
+                      //System.out.println("I moved!");
+                }
+            }
+        }
+
+        //return mode
+        //flag is set to location of enemy ec
+        if (mode == 1) {
+            //runs if home does not have target location
+            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+                Direction toHome = rc.getLocation().directionTo(homeLoc);
+                if (tryMove(toHome)) {
+                    return;
+                }
+                if (tryMove(toHome.rotateLeft())) {
+                    return;
+                }
+                if (tryMove(toHome.rotateRight())) {
+                    return;
+                }
+            }
+            //runs if home does have target location
+            else {
+                mode = 2;
+            }
+        }
+
+        //random mode
+        //already did its job, walking around randomly
+        if (mode == 2) {
+            if (tryMove(randomDirection())){
+                  //System.out.println("I moved!");
+            }
         }
     }
 
@@ -227,4 +296,37 @@ public strictfp class RobotPlayer {
         }
         return false;
   }
+
+  static MapLocation getLocationFromFlag(int flag) {
+        MapLocation currentLocation = rc.getLocation();
+        int offsetX = currentLocation.x / 128;
+        int offsetY = currentLocation.y / 128;
+
+        int targetX = (flag / 128) % 128;
+        int targetY = flag % 128;
+        MapLocation actualLocation = new MapLocation(offsetX * 128 + targetX, offsetY * 128 + targetY);
+
+        MapLocation alternative = actualLocation.translate(-128, 0);
+        if (rc.getLocation().distanceSquaredTo(alternative) < rc.getLocation().distanceSquaredTo(actualLocation)) {
+            actualLocation = alternative;
+        }
+        alternative = actualLocation.translate(128, 0);
+        if (rc.getLocation().distanceSquaredTo(alternative) < rc.getLocation().distanceSquaredTo(actualLocation)) {
+            actualLocation = alternative;
+        }
+        alternative = actualLocation.translate(0, -128);
+        if (rc.getLocation().distanceSquaredTo(alternative) < rc.getLocation().distanceSquaredTo(actualLocation)) {
+            actualLocation = alternative;
+        }
+        alternative = actualLocation.translate(0, 128);
+        if (rc.getLocation().distanceSquaredTo(alternative) < rc.getLocation().distanceSquaredTo(actualLocation)) {
+            actualLocation = alternative;
+        }
+
+        return alternative;
+    }
+
+    static int pushLocationToFlag(MapLocation location) {
+        return (location.x % 128) * 128 + (location.y % 128);
+    }
 }
