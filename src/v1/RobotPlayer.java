@@ -285,3 +285,4 @@ public strictfp class RobotPlayer {
     int flagnum = (Math.min(otherflagnum, flagnumFromDir(toMuck)) + 1) % 8;
     return flagnum;
   }
+}
