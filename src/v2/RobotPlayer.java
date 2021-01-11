@@ -149,12 +149,14 @@ public strictfp class RobotPlayer {
 
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
-        for (RobotInfo robot: rc.senseNearbyRobots(actionRadius, enemy)) {
+        for (RobotInfo robot: rc.senseNearbyRobots(actionRadius)) {
             if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-                if(rc.canEmpower(actionRadius)) {
-                    System.out.println("jeff say go attek");
-                    rc.empower(actionRadius);
-                    return;
+                if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
+                    if(rc.canEmpower(actionRadius)) {
+                        System.out.println("jeff say go attek");
+                        rc.empower(actionRadius);
+                        return;
+                    }
                 }
             }
         }
@@ -236,12 +238,14 @@ public strictfp class RobotPlayer {
             }
             //runs if home does not have target location
             if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-                for (RobotInfo robot: rc.senseNearbyRobots(-1, enemy)) {
+                for (RobotInfo robot: rc.senseNearbyRobots(-1)) {
                     if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-                        enemyLoc = robot.location;
-                        enemyID = robot.ID;
-                        rc.setFlag(pushLocationToFlag(robot.location));
-                        mode = 1;
+                        if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
+                            enemyLoc = robot.location;
+                            enemyID = robot.ID;
+                            rc.setFlag(pushLocationToFlag(robot.location));
+                            mode = 1;
+                        }
                     }
                 }
                 if (tryMove(randomDirection())){
