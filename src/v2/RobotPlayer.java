@@ -1,9 +1,6 @@
 package v2;
 import battlecode.common.*;
 
-
-//THIS VERSION IS WORKING ON BASIC IMPLEMENTATION OF FLAGS:
-//  basic encoding and decoding of location of flags
 public strictfp class RobotPlayer {
     static RobotController rc;
 
@@ -83,16 +80,9 @@ public strictfp class RobotPlayer {
 
     static void runEnlightenmentCenter() throws GameActionException {
         //set home equal to its own location
-        if (homeID == -1) {
-          homeID = rc.getID();
-        }
-        if (homeLoc == null) {
-          homeLoc = rc.getLocation();
-        }
-
-        if (rc.canBid(1)) {
-          rc.bid(1);
-        }
+        if (homeID == -1) homeID = rc.getID();
+        if (homeLoc == null) homeLoc = rc.getLocation();
+        if (rc.canBid(1)) rc.bid(1);
 
         if (turnCount <= 100) {
           for (Direction dir : directions) {
@@ -101,8 +91,7 @@ public strictfp class RobotPlayer {
               break;
             }
           }
-        }
-        else {
+        } else {
           RobotType toBuild = randomSpawnableRobotType();
           for (Direction dir : directions) {
               if (rc.canBuildRobot(toBuild, dir, 50) && toBuild == RobotType.POLITICIAN) {
@@ -116,30 +105,60 @@ public strictfp class RobotPlayer {
               }
            }
         }
+
+        // sets flag if messenger muckrakers have info about enemy EC
+        for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+            if (robot.type == RobotType.MUCKRAKER){
+                int otherflag = rc.getFlag(robot.getID());
+                if (otherflag != 0) {
+                    enemyLoc = getLocationFromFlag(otherflag);
+                    int flagnum = pushLocationToFlag(enemyLoc);
+                    if (rc.canSetFlag(flagnum)) rc.setFlag(flagnum);
+                    break;
+                }
+            }
+        }
     }
 
     static void runPolitician() throws GameActionException {
-        //set home equal to the enlightenment center that built it
+        // set home equal to the EC that built it
+        // if home EC has enemy EC loc, set flag and enemyLoc
         if (homeLoc == null) {
-          for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
-            if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-              homeID = robot.ID;
-              homeLoc = robot.location;
+            for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+                if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+                    homeID = robot.ID;
+                    homeLoc = robot.location;
+                    break;
+                }
             }
-          }
         }
 
-        Team enemy = rc.getTeam().opponent();
-        int actionRadius = rc.getType().actionRadiusSquared;
-        RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
-        if (attackable.length != 0 && rc.canEmpower(actionRadius)) {
-            System.out.println("empowering...");
-            rc.empower(actionRadius);
-            System.out.println("empowered");
-            return;
+        if (enemyLoc == null) {
+            int ecFlag = rc.getFlag(homeID);
+            if (ecFlag != 0) {
+                if (rc.canSetFlag(ecFlag)) rc.setFlag(ecFlag);
+                enemyLoc = getLocationFromFlag(ecFlag);
+            }
         }
-        if (tryMove(randomDirection())){
-            //System.out.println("I moved!");
+
+        // Team enemy = rc.getTeam().opponent();
+        // int actionRadius = rc.getType().actionRadiusSquared;
+        // RobotInfo[] attackable = rc.senseNearbyRobots(actionRadius, enemy);
+        // if (attackable.length != 0 && rc.canEmpower(actionRadius)) {
+        //     System.out.println("empowering...");
+        //     rc.empower(actionRadius);
+        //     System.out.println("empowered");
+        //     return;
+        // }
+
+        // if it has an enemyLoc, move towards enemyLoc
+        if (enemyLoc != null) {
+            Direction dirToEnemy = rc.getLocation().directionTo(enemyLoc);
+            if (!tryMove(dirToEnemy)) {
+                tryMove(randomDirection());
+            }
+        } else {
+            tryMove(randomDirection());
         }
     }
 
@@ -294,7 +313,10 @@ public strictfp class RobotPlayer {
         } else return false;
     }
 
-    //gets the location
+    static int flagnumFromDir(Direction dir) throws GameActionException {
+        return java.util.Arrays.asList(directions).indexOf(dir);
+    }
+
     static MapLocation getLocationFromFlag(int flag) {
 
         MapLocation currentLocation = rc.getLocation();
