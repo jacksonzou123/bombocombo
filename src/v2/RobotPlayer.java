@@ -26,6 +26,9 @@ public strictfp class RobotPlayer {
     static MapLocation homeLoc;
     static MapLocation enemyLoc;
 
+    //store ID of ally muckraker that you're reading from
+    static int unitID;
+
     //mode of unit (determintes what they're doing)
     static int mode;
 
@@ -46,6 +49,7 @@ public strictfp class RobotPlayer {
 
         homeID = -1;
         enemyID = -1;
+        unitID = -1;
         homeLoc = null;
         enemyLoc = null;
         turnCount = 0;
@@ -82,8 +86,11 @@ public strictfp class RobotPlayer {
         //set home equal to its own location
         if (homeID == -1) homeID = rc.getID();
         if (homeLoc == null) homeLoc = rc.getLocation();
+
+        //bid
         if (rc.canBid(1)) rc.bid(1);
 
+        //build muckrakers for first 100 turns
         if (turnCount <= 100) {
           for (Direction dir : directions) {
             if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
@@ -91,7 +98,9 @@ public strictfp class RobotPlayer {
               break;
             }
           }
-        } else {
+        }
+        //build other stuff
+        else {
           RobotType toBuild = randomSpawnableRobotType();
           for (Direction dir : directions) {
               if (rc.canBuildRobot(toBuild, dir, 150) && toBuild == RobotType.POLITICIAN) {
@@ -110,17 +119,65 @@ public strictfp class RobotPlayer {
            }
         }
 
+        // looks for ally muckrakers with flag that contain info about enemy EC
         // sets flag if messenger muckrakers have info about enemy EC
-        for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
-            if (robot.type == RobotType.MUCKRAKER){
-                int otherflag = rc.getFlag(robot.getID());
-                if (otherflag != 0) {
-                    enemyLoc = getLocationFromFlag(otherflag);
-                    int flagnum = pushLocationToFlag(enemyLoc);
-                    if (rc.canSetFlag(flagnum)) rc.setFlag(flagnum);
-                    break;
+        if (mode == 0) {
+            if (unitID == -1) {
+                for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+                    if (robot.type == RobotType.MUCKRAKER){
+                        int otherflag = rc.getFlag(robot.getID());
+                        if (otherflag != 0) {
+                            unitID = robot.getID();
+                            int tempID = getIDFromFlag(otherflag);
+                            if (tempID < 0) {
+                                enemyID = tempID * -512;
+                            }
+                            else {
+                                enemyID = tempID;
+                            }
+                            enemyLoc = getLocationFromFlag(otherflag);
+                            System.out.println("1: " + tempID);
+                            return;
+                        }
+                    }
                 }
             }
+            else {
+                if (rc.canGetFlag(unitID)) {
+                    int tempID = getIDFromFlag(rc.getFlag(unitID));
+                    if (tempID < 0) {
+                        enemyID += tempID * -512;
+                    }
+                    else {
+                        enemyID += tempID;
+                    }
+                    System.out.println("2: " + tempID);
+                    mode = 1;
+                    //System.out.println("EnemyID: " + enemyID);
+                }
+                else {
+                    enemyID = -1;
+                    enemyLoc = null;
+                    unitID = -1;
+                }
+            }
+
+        }
+
+
+        if (mode == 1) {
+            if (rc.canGetFlag(enemyID)) {
+                int flagnum = pushLocationToFlag(enemyLoc);
+                if (rc.canSetFlag(flagnum)) rc.setFlag(flagnum);
+            }
+            else {
+                enemyID = -1;
+                enemyLoc = null;
+                unitID = -1;
+                if (rc.canSetFlag(0)) rc.setFlag(0);
+                mode = 0;
+            }
+            return;
         }
     }
 
@@ -153,7 +210,7 @@ public strictfp class RobotPlayer {
             if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
                 if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
                     if(rc.canEmpower(actionRadius)) {
-                        System.out.println("jeff say go attek");
+                        //System.out.println("jeff say go attek");
                         rc.empower(actionRadius);
                         return;
                     }
@@ -243,7 +300,7 @@ public strictfp class RobotPlayer {
                         if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
                             enemyLoc = robot.location;
                             enemyID = robot.ID;
-                            rc.setFlag(pushLocationToFlag(robot.location));
+                            rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(robot.location));
                             mode = 1;
                         }
                     }
@@ -266,6 +323,7 @@ public strictfp class RobotPlayer {
         if (mode == 1) {
             //runs if home does not have target location
             if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+                rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(enemyLoc));
                 Direction toHome = rc.getLocation().directionTo(homeLoc);
                 if (tryMove(toHome)) {
                     return;
@@ -286,7 +344,13 @@ public strictfp class RobotPlayer {
         //random mode
         //already did its job, walking around randomly
         if (mode == 2) {
-            if (tryMove(randomDirection())){
+            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+                mode = 0;
+                enemyID = -1;
+                enemyLoc = null;
+                if (rc.canSetFlag(0)) rc.setFlag(0);
+            }
+            else if (tryMove(randomDirection())){
                   //System.out.println("I moved!");
             }
         }
@@ -329,8 +393,19 @@ public strictfp class RobotPlayer {
         return java.util.Arrays.asList(directions).indexOf(dir);
     }
 
-    static MapLocation getLocationFromFlag(int flag) {
+    //returns part of the ID from the flag
+    //if value is positive, then it is the id mod 512
+    //if value is negative, then it is the id divided 512
+    static int getIDFromFlag(int flag) {
+        flag = flag / 16384; //2^14
+        if (flag > 512) {
+            return (flag % 512) * -1;
+        }
+        return flag;
+    }
 
+    static MapLocation getLocationFromFlag(int flag) {
+        flag = flag % 16384; //2^14
         MapLocation currentLocation = rc.getLocation();
         int offsetX = currentLocation.x / 128;
         int offsetY = currentLocation.y / 128;
@@ -357,6 +432,15 @@ public strictfp class RobotPlayer {
         }
 
         return actualLocation;
+    }
+
+    //returns the int to put into flag based on ID given
+    //turn is 0 or 1, based on odd or even turn
+    static int pushIDToFlag(int turn, int id) {
+        if (turn == 0) {
+            return (id % 512) << 14;
+        }
+        return ((1 << 9) | (id / 512)) << 14;
     }
 
     //returns the int to put into flag based on location given
