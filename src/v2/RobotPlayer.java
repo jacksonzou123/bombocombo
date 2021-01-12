@@ -136,7 +136,7 @@ public strictfp class RobotPlayer {
                                 enemyID = tempID;
                             }
                             enemyLoc = getLocationFromFlag(otherflag);
-                            System.out.println("1: " + tempID);
+                            //System.out.println("1: " + tempID);
                             return;
                         }
                     }
@@ -151,7 +151,7 @@ public strictfp class RobotPlayer {
                     else {
                         enemyID += tempID;
                     }
-                    System.out.println("2: " + tempID);
+                    //System.out.println("2: " + tempID);
                     mode = 1;
                     //System.out.println("EnemyID: " + enemyID);
                 }
