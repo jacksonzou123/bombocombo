@@ -101,6 +101,7 @@ public strictfp class RobotPlayer {
     if(rc.canBid((int)(.0005*rc.getInfluence()))){
       rc.bid((int)(.0005*rc.getInfluence()));
     }
+
     if (turnCount <= 100) {
       for (Direction dir : directions) {
         if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
@@ -109,8 +110,6 @@ public strictfp class RobotPlayer {
         }
       }
     }
-
-
     //build other stuff
     else {
       RobotType toBuild = randomSpawnableRobotType();
@@ -279,164 +278,123 @@ public strictfp class RobotPlayer {
   }
 
   static void runMuckraker() throws GameActionException {
-    Team ally = rc.getTeam();
-    Team enemy = rc.getTeam().opponent();
-    int actionRadius = rc.getType().actionRadiusSquared;
-    for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
-      if (robot.type.canBeExposed()) {
-        //It's a slanderer... go get them!
-        if (rc.canExpose(robot.location)) {
-          //System.out.println("e x p o s e d");
-          rc.expose(robot.location);
-          return;
-        }
-      }
-    }
-
-    //scouting mode
-    //enemyLoc should be NULL in this mode
-    if (mode == 0) {
-      //set home location on spawn
-      if (homeLoc == null) {
-        for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
-          if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-            homeID = robot.ID;
-            homeLoc = robot.location;
+      Team ally = rc.getTeam();
+      Team enemy = rc.getTeam().opponent();
+      int actionRadius = rc.getType().actionRadiusSquared;
+      for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
+          if (robot.type.canBeExposed()) {
+              //It's a slanderer... go get them!
+              if (rc.canExpose(robot.location)) {
+                  //System.out.println("e x p o s e d");
+                  rc.expose(robot.location);
+                  return;
+              }
           }
-        }
       }
 
-      //scouts if home does not have target location set
-      if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-        for (RobotInfo robot: rc.senseNearbyRobots(-1)) {
-          if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-            if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
-              enemyLoc = robot.location;
-              enemyID = robot.ID;
-              rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(robot.location));
-              mode = 1;
-            }
-          }
-        }
-
-        //go to where there's less muckrakers
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1,rc.getTeam());
-        if(nearbyBots.length>6){
-          Direction[] listofDirs = new Direction[nearbyBots.length];
-          int index = 0;
-          for(RobotInfo robot : nearbyBots){
-            if(robot.type == RobotType.MUCKRAKER){
-              listofDirs[index] = rc.getLocation().directionTo(robot.getLocation());
-              index++;
-            }
-          }
-          int[] maxDirection = new int[8];
-          int highestIndex = 0;
-          for(Direction dir : listofDirs){
-            if(dir != null){
-              switch(dir){
-                case NORTH:  maxDirection[0]++; break;
-                case NORTHEAST:  maxDirection[1]++; break;
-                case EAST:  maxDirection[2]++; break;
-                case SOUTHEAST:  maxDirection[3]++; break;
-                case SOUTH:  maxDirection[4]++; break;
-                case SOUTHWEST:  maxDirection[5]++; break;
-                case WEST:  maxDirection[6]++; break;
-                case NORTHWEST:  maxDirection[7]++; break;
-                default: break;
+      //scouting mode
+      //enemyLoc should be NULL in this mode
+      if (mode == 0) {
+          //set home location on spawn
+          if (homeLoc == null) {
+            for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+              if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+                homeID = robot.ID;
+                homeLoc = robot.location;
               }
             }
           }
-          for(int i = 0; i<maxDirection.length;i++){
-            if(maxDirection[i]>=maxDirection[highestIndex]){
-              highestIndex = i;
-            }
+          //runs if home does not have target location
+          if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+              for (RobotInfo robot: rc.senseNearbyRobots(-1)) {
+                  if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+                      if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
+                          enemyLoc = robot.location;
+                          enemyID = robot.ID;
+                          rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(robot.location));
+                          mode = 1;
+                      }
+                  }
+              }
+              muckMove();
           }
-          tryMove(directions[highestIndex].opposite());
-        }
-        else{
-          if (tryMove(randomDirection())){
-            //System.out.println("I moved!");
+          //runs if home already has target location
+          else {
+              mode = 2;
+              muckMove();
           }
-        }
-      }
-      //runs if home already has target location
-      else {
-        mode = 2;
-        if (tryMove(randomDirection())){
-          //System.out.println("I moved!");
-        }
       }
 
       //return mode
       //flag is set to location of enemy ec
       if (mode == 1) {
-        //runs if home does not have target location
-        if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-          rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(enemyLoc));
-          Direction toHome = rc.getLocation().directionTo(homeLoc);
-          if (tryMove(toHome)) {
-            return;
+          //runs if home does not have target location
+          if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+              rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(enemyLoc));
+              Direction toHome = rc.getLocation().directionTo(homeLoc);
+              if (tryMove(toHome)) {
+                  return;
+              }
+              if (tryMove(toHome.rotateLeft())) {
+                  return;
+              }
+              if (tryMove(toHome.rotateRight())) {
+                  return;
+              }
           }
-          if (tryMove(toHome.rotateLeft())) {
-            return;
+          //runs if home does have target location
+          else {
+              mode = 2;
           }
-          if (tryMove(toHome.rotateRight())) {
-            return;
-          }
-        }
-        //runs if home does have target location
-        else {
-          mode = 2;
-        }
       }
 
       //random mode
       //already did its job, walking around randomly
       if (mode == 2) {
-        if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-          mode = 0;
-          enemyID = -1;
-          enemyLoc = null;
-          if (rc.canSetFlag(0)) rc.setFlag(0);
-        }
-        else{
-          //go to where there's less muckrakers
-          RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1,rc.getTeam());
-          Direction[] listofDirs = new Direction[nearbyBots.length];
-          int index = 0;
-          for(RobotInfo robot : nearbyBots){
-            if(robot.type == RobotType.MUCKRAKER){
-              listofDirs[index] = rc.getLocation().directionTo(robot.getLocation());
-              index++;
-            }
+          if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+              mode = 0;
+              enemyID = -1;
+              enemyLoc = null;
+              if (rc.canSetFlag(0)) rc.setFlag(0);
           }
-          int[] maxDirection = new int[8];
-          int highestIndex = 0;
-          for(Direction dir : listofDirs){
-            if(dir != null){
-              switch(dir){
-                case NORTH:  maxDirection[0]++; break;
-                case NORTHEAST:  maxDirection[1]++; break;
-                case EAST:  maxDirection[2]++; break;
-                case SOUTHEAST:  maxDirection[3]++; break;
-                case SOUTH:  maxDirection[4]++; break;
-                case SOUTHWEST:  maxDirection[5]++; break;
-                case WEST:  maxDirection[6]++; break;
-                case NORTHWEST:  maxDirection[7]++; break;
-                default: break;
-              }
-            }
-          }
-          for(int i = 0; i<maxDirection.length;i++){
-            if(maxDirection[i]>=maxDirection[highestIndex]){
-              highestIndex = i;
-            }
-          }
-          tryMove(directions[highestIndex].opposite());
+          else muckMove();
+      }
+  }
+
+  static void muckMove() throws GameActionException{
+    //go to where there's less muckrakers
+    RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1,rc.getTeam());
+    Direction[] listofDirs = new Direction[nearbyBots.length];
+    int index = 0;
+    for(RobotInfo robot : nearbyBots){
+      if(robot.type == RobotType.MUCKRAKER){
+        listofDirs[index] = rc.getLocation().directionTo(robot.getLocation());
+        index++;
+      }
+    }
+    int[] maxDirection = new int[8];
+    int highestIndex = 0;
+    for(Direction dir : listofDirs){
+      if(dir != null){
+        switch(dir){
+          case NORTH:  maxDirection[0]++; break;
+          case NORTHEAST:  maxDirection[1]++; break;
+          case EAST:  maxDirection[2]++; break;
+          case SOUTHEAST:  maxDirection[3]++; break;
+          case SOUTH:  maxDirection[4]++; break;
+          case SOUTHWEST:  maxDirection[5]++; break;
+          case WEST:  maxDirection[6]++; break;
+          case NORTHWEST:  maxDirection[7]++; break;
+          default: break;
         }
       }
     }
+    for(int i = 0; i<maxDirection.length;i++){
+      if(maxDirection[i]>=maxDirection[highestIndex]){
+        highestIndex = i;
+      }
+    }
+    tryMove(directions[highestIndex].opposite());
   }
 
   /**
