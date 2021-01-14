@@ -34,6 +34,7 @@ public strictfp class RobotPlayer {
 
   static int turnCount;
 
+  static Direction cameFrom;
   //HELLO
 
   /**
@@ -54,6 +55,7 @@ public strictfp class RobotPlayer {
     enemyLoc = null;
     turnCount = 0;
     mode = 0;
+    cameFrom = null;
 
 
     //System.out.println("I'm a " + rc.getType() + " and I just got created!");
@@ -98,8 +100,8 @@ public strictfp class RobotPlayer {
     //     rc.bid(3);
     //   }
     // }
-    if(rc.canBid((int)(.0005*rc.getInfluence()))){
-      rc.bid((int)(.0005*rc.getInfluence()));
+    if(rc.canBid((int)(.001*rc.getInfluence()))){
+      rc.bid((int)(.001*rc.getInfluence()));
     }
 
     if (turnCount <= 100) {
@@ -316,12 +318,12 @@ public strictfp class RobotPlayer {
                       }
                   }
               }
-              muckMove();
+              muckMove2();
           }
           //runs if home already has target location
           else {
               mode = 2;
-              muckMove();
+              muckMove2();
           }
       }
 
@@ -357,7 +359,7 @@ public strictfp class RobotPlayer {
               enemyLoc = null;
               if (rc.canSetFlag(0)) rc.setFlag(0);
           }
-          else muckMove();
+          else muckMove2();
       }
   }
 
@@ -395,6 +397,27 @@ public strictfp class RobotPlayer {
       }
     }
     tryMove(directions[highestIndex].opposite());
+  }
+
+
+  static void muckMove2() throws GameActionException{
+    boolean moved = false;
+    while(!moved){
+      if(cameFrom == null){
+        Direction tempdir = randomDirection();
+        if(tryMove(tempdir)){
+          cameFrom = tempdir.opposite();
+          moved = true;
+        }
+      }
+      else{
+        Direction tempdir = randomDirection();
+        if(tempdir != cameFrom && tempdir != cameFrom.rotateLeft() && tempdir != cameFrom.rotateRight() && tryMove(tempdir)){
+          cameFrom = tempdir.opposite();
+          moved = true;
+        }
+      }
+    }
   }
 
   /**
