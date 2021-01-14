@@ -231,6 +231,10 @@ public strictfp class RobotPlayer {
             if (smartMove(dirToEnemy)) {
                 return;
             }
+            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
+                enemyLoc = null;
+                enemyID = 0;
+            }
         }
 
         if (enemyCount > 6) {
