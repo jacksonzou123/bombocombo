@@ -513,8 +513,8 @@ public strictfp class RobotPlayer {
     }
 
     static int calculateSlanderInfluence(int influence) {
-        int gain = Math.floor(influence * 1/50 + 0.03 * Math.pow(Math.E, -0.001 * influence));
-        while (Math.floor(influence * 1/50 + 0.03 * Math.pow(Math.E, -0.001 * influence)) == gain) {
+        int gain = (int)Math.floor(influence * (1.0/50 + 0.03 * Math.pow(Math.E, -0.001 * influence)));
+        while ((int)Math.floor(influence * (1.0/50 + 0.03 * Math.pow(Math.E, -0.001 * influence))) == gain) {
             influence -= 1;
         }
         return influence + 1;
