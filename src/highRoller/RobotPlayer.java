@@ -318,12 +318,12 @@ public strictfp class RobotPlayer {
                       }
                   }
               }
-              muckMove2();
+              muckMove();
           }
           //runs if home already has target location
           else {
               mode = 2;
-              muckMove2();
+              muckMove();
           }
       }
 
@@ -359,48 +359,12 @@ public strictfp class RobotPlayer {
               enemyLoc = null;
               if (rc.canSetFlag(0)) rc.setFlag(0);
           }
-          else muckMove2();
+          else muckMove();
       }
   }
+
 
   static void muckMove() throws GameActionException{
-    //go to where there's less muckrakers
-    RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1,rc.getTeam());
-    Direction[] listofDirs = new Direction[nearbyBots.length];
-    int index = 0;
-    for(RobotInfo robot : nearbyBots){
-      if(robot.type == RobotType.MUCKRAKER){
-        listofDirs[index] = rc.getLocation().directionTo(robot.getLocation());
-        index++;
-      }
-    }
-    int[] maxDirection = new int[8];
-    int highestIndex = 0;
-    for(Direction dir : listofDirs){
-      if(dir != null){
-        switch(dir){
-          case NORTH:  maxDirection[0]++; break;
-          case NORTHEAST:  maxDirection[1]++; break;
-          case EAST:  maxDirection[2]++; break;
-          case SOUTHEAST:  maxDirection[3]++; break;
-          case SOUTH:  maxDirection[4]++; break;
-          case SOUTHWEST:  maxDirection[5]++; break;
-          case WEST:  maxDirection[6]++; break;
-          case NORTHWEST:  maxDirection[7]++; break;
-          default: break;
-        }
-      }
-    }
-    for(int i = 0; i<maxDirection.length;i++){
-      if(maxDirection[i]>=maxDirection[highestIndex]){
-        highestIndex = i;
-      }
-    }
-    tryMove(directions[highestIndex].opposite());
-  }
-
-
-  static void muckMove2() throws GameActionException{
     boolean moved = false;
     while(!moved){
       if(cameFrom == null){
