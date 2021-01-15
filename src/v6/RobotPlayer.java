@@ -68,7 +68,7 @@ public strictfp class RobotPlayer {
             if (rc.canBuildRobot(RobotType.SLANDERER, randDir, maxInf)) {
                 rc.buildRobot(RobotType.SLANDERER, randDir, maxInf);
             }
-        } else if ()
+        }
         // RobotType toBuild = randomSpawnableRobotType();
         // int influence = 50;
         // for (Direction dir : directions) {
