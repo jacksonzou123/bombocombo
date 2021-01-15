@@ -232,7 +232,7 @@ public strictfp class RobotPlayer {
             if (smartMove(dirToEnemy)) {
                 return;
             }
-        }   
+        }
 
         if (enemyCount > 6) {
             if (rc.canEmpower(actionRadius)) {
