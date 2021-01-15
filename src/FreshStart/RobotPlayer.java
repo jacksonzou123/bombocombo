@@ -1,4 +1,4 @@
-package v4;
+package FreshStart;
 import battlecode.common.*;
 
 public strictfp class RobotPlayer {
@@ -25,6 +25,8 @@ public strictfp class RobotPlayer {
     static int enemyID;
     static MapLocation homeLoc;
     static MapLocation enemyLoc;
+    //toBe is maplocation after movement
+    static MapLocation toBe;
     static Direction scoutDir;
 
     //store ID of ally muckraker that you're reading from
@@ -55,10 +57,12 @@ public strictfp class RobotPlayer {
         homeLoc = null;
         enemyLoc = null;
         scoutDir = null;
+        toBe = null;
         turnCount = 0;
         muckCount = 0;
         robotTurn = 0;
         mode = 0;
+
 
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
@@ -93,52 +97,61 @@ public strictfp class RobotPlayer {
         if (homeLoc == null) homeLoc = rc.getLocation();
 
         //bid
-        if (rc.getTeamVotes() < 751) {
-            if (rc.canBid((int)Math.ceil((rc.getInfluence() * 0.005)))) rc.bid((int)Math.ceil((rc.getInfluence() * 0.005)));
-        }
+        // if (rc.getTeamVotes() < 751) {
+        //     if (rc.canBid((int)Math.ceil((rc.getInfluence() * 0.005)))) rc.bid((int)Math.ceil((rc.getInfluence() * 0.005)));
+        // }
 
-        //build muckrakers for first 60 turns
-        if (turnCount <= 40) {
-          for (Direction dir : directions) {
-            if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
-              rc.buildRobot(RobotType.MUCKRAKER, dir, 1);
-              break;
+        //build slanderer for the first turn
+        if (turnCount == 1){
+            Direction ran = randomDirection();
+            if (rc.canBuildRobot(RobotType.SLANDERER, ran, calculateSlanderInfluence(141))){
+                rc.buildRobot(RobotType.SLANDERER, ran, calculateSlanderInfluence(141));
             }
-          }
         }
-        else if(turnCount > 40 && turnCount <= 250){
-            for (Direction dir : directions) {
-                if (rc.canBuildRobot(RobotType.SLANDERER, dir, calculateSlanderInfluence(41))){
-                    rc.buildRobot(RobotType.SLANDERER, dir, calculateSlanderInfluence(41));
-                    robotTurn += 1;
+        //alternate between mucks and poli's
+        else if (turnCount > 1 && turnCount <= 300){
+            for (Direction dir : directions){
+                if (robotTurn == 0){
+                    if (rc.canBuildRobot(RobotType.POLITICIAN, dir, 10 + (int)(rc.getInfluence() * (2.0 / 3)))){
+                        rc.buildRobot(RobotType.POLITICIAN, dir, 10 + (int)(rc.getInfluence() * (2.0 / 3)));
+                        robotTurn ++;
+                    }
                 }
                 else if (robotTurn == 1){
-                    if (rc.canBuildRobot(RobotType.POLITICIAN, dir, 15)){
-                        rc.buildRobot(RobotType.POLITICIAN, dir, 15);
+                    if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)){
+                        rc.buildRobot(RobotType.MUCKRAKER, dir, 1);
                         robotTurn = 0;
                     }
                 }
-                break;
             }
         }
-        //build stronger stuff
-        else {
-            for (Direction dir : directions) {
-                
-                if (robotTurn != 2){
-                    if (rc.canBuildRobot(RobotType.SLANDERER, dir, 81)){
-                        rc.buildRobot(RobotType.SLANDERER, dir, 81);
-                        robotTurn += 1;
-                    }
-                }
-                else if (robotTurn == 2){
-                    if (rc.canBuildRobot(RobotType.POLITICIAN, dir, 30)){
-                        rc.buildRobot(RobotType.POLITICIAN, dir, 30);
-                        robotTurn = 0;
-                    }
-                }
-                break;
-            }
+        //after, get make slander and poli's
+        // else{
+        //     for (Direction dir : directions){
+        //         if (robotTurn == 0){
+        //             if (rc.canBuildRobot(RobotType.POLITICIAN, dir, (int)(rc.getInfluence() * (2.0 / 3)))){
+        //                 rc.buildRobot(RobotType.POLITICIAN, dir, (int)(rc.getInfluence() * (2.0 / 3)));
+        //                 robotTurn ++;
+        //             }
+        //         }
+        //         else if (robotTurn == 1){
+        //             if (rc.canBuildRobot(RobotType.SLANDERER, dir, calculateSlanderInfluence(200))){
+        //                 rc.buildRobot(RobotType.SLANDERER, dir, calculateSlanderInfluence(200));
+        //                 robotTurn ++;
+        //             }
+        //         }
+        //         else if (robotTurn == 2){
+        //             if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)){
+        //                 rc.buildRobot(RobotType.MUCKRAKER, dir, 1);
+        //                 robotTurn = 0;
+        //             }
+        //         }
+        //     }
+        // }
+
+        //test part
+        else{
+            rc.resign();
         }
 
         // looks for ally muckrakers with flag that contain info about enemy EC
@@ -204,31 +217,12 @@ public strictfp class RobotPlayer {
     }
 
     static void runPolitician() throws GameActionException {
-        // set home equal to the EC that built it
-        // if home EC has enemy EC loc, set flag and enemyLoc
-        if (homeLoc == null) {
-            for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
-                if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-                    homeID = robot.ID;
-                    homeLoc = robot.location;
-                    break;
-                }
-            }
-        }
-
-        if (enemyLoc == null) {
-            if (rc.canGetFlag(homeID)) {
-                int ecFlag = rc.getFlag(homeID);
-                if (ecFlag != 0) {
-                    if (rc.canSetFlag(ecFlag)) rc.setFlag(ecFlag);
-                    enemyLoc = getLocationFromFlag(ecFlag);
-                }
-            }
-        }
-
+        //empowers if enlightment nearby
         Team enemy = rc.getTeam().opponent();
         int actionRadius = rc.getType().actionRadiusSquared;
-        for (RobotInfo robot: rc.senseNearbyRobots(actionRadius)) {
+        RobotInfo[] robotsNearby = rc.senseNearbyRobots(actionRadius);
+        int enemyCount = 0;
+        for (RobotInfo robot: robotsNearby) {
             if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
                 if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
                     if(rc.canEmpower(actionRadius)) {
@@ -238,15 +232,38 @@ public strictfp class RobotPlayer {
                     }
                 }
             }
-        }
-
-        // if it has an enemyLoc, move towards enemyLoc
-        if (enemyLoc != null) {
-            Direction dirToEnemy = rc.getLocation().directionTo(enemyLoc);
-            if (!tryMove(dirToEnemy)) {
-                tryMove(randomDirection());
+            if (robot.team == enemy) {
+                enemyCount++;
             }
-        } 
+        }
+        if (mode == 0) {
+            //set home location on spawn
+            if (homeLoc == null) {
+              for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+                if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
+                  homeID = robot.ID;
+                  homeLoc = robot.location;
+                  scoutDir = rc.getLocation().directionTo(homeLoc).opposite();
+                  toBe = rc.getLocation().add(scoutDir);
+                }
+              }
+            }
+                
+
+            if (rc.onTheMap(toBe)){
+                smartMove(scoutDir);
+                toBe = rc.getLocation().add(scoutDir);
+            }
+            else{
+                do{
+                    scoutDir = scoutDir.rotateLeft();
+                    toBe = rc.getLocation().add(scoutDir);
+                }
+                while(!(rc.onTheMap(toBe)));
+                smartMove(scoutDir);
+            }
+            
+        }
     }
 
     static void runSlanderer() throws GameActionException {
@@ -311,120 +328,38 @@ public strictfp class RobotPlayer {
                   homeID = robot.ID;
                   homeLoc = robot.location;
                   scoutDir = rc.getLocation().directionTo(homeLoc).opposite();
+                  toBe = rc.getLocation().add(scoutDir);
                 }
               }
             }
-            //runs if home does not have target location
-            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-                for (RobotInfo robot: rc.senseNearbyRobots(-1)) {
-                    if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-                        if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
-                            enemyLoc = robot.location;
-                            enemyID = robot.ID;
-                            rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(robot.location));
-                            mode = 1;
-                        }
-                    }
+                
+
+            if (rc.onTheMap(toBe)){
+                smartMove(scoutDir);
+                toBe = rc.getLocation().add(scoutDir);
+            }
+            else{
+                do{
+                    scoutDir = scoutDir.rotateLeft();
+                    toBe = rc.getLocation().add(scoutDir);
                 }
-                if (smartMove(scoutDir)){
-                      //System.out.println("I moved!");
-                }
+                while(!(rc.onTheMap(toBe)));
+                smartMove(scoutDir);
             }
             
-            //runs if home already has target location
-            else {
-                mode = 0;
-            }
         }
 
-        //return mode
-        //flag is set to location of enemy ec
-        if (mode == 1) {
-            //runs if home does not have target location
-            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-                rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(enemyLoc));
-                Direction toHome = rc.getLocation().directionTo(homeLoc);
-                smartMove(toHome);
-            }
-            //runs if home does have target location
-            else {
-                if (enemyLoc != null){
-                    mode = 0;
-                }
-                else{
-                    mode = 3;
-                }
-                
-            }
-            // todo: runs if home already has a target, then stay until the target is gone
-        }
-
-        //attack mode
-        //flag is set to location of enemy ec and goes with politicians
-        if (mode == 3){
-            // if target EC doesnt have flag targeted then return to mode 2
-            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0){
-                mode = 2;
-            }
-            // flag is not changed here
-            // else go to the enemy
-            if (rc.canGetFlag(homeID)) {
-                int ecFlag = rc.getFlag(homeID);
-                if (ecFlag != 0) {
-                    if (rc.canSetFlag(ecFlag)) rc.setFlag(ecFlag);   
-                    enemyLoc = getLocationFromFlag(ecFlag);
-                }
-                else if (ecFlag == 0){
-                    smartMove(randomDirection());
-                }
-            }
-            
-            if (enemyLoc != null) {
-                Direction dirToEnemy = rc.getLocation().directionTo(enemyLoc);
-                smartMove(dirToEnemy);
-            }
-            
-            for (RobotInfo robot : rc.senseNearbyRobots(-1, ally)) {
-                if (robot.type == RobotType.MUCKRAKER){
-                    muckCount += 1;
-                    }
-                if (muckCount >= 5){
-                    mode = 2;
-                }
-                
-            }
-            
-        }
-        //random mode
-        //already did its job, walking around randomly
-        if (mode == 2) {
-            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-                mode = 0;
-                enemyID = -1;
-                enemyLoc = null;
-                if (rc.canSetFlag(0)) rc.setFlag(0);
-            }
-            else if (rc.canGetFlag(homeID) && rc.getFlag(homeID) != 0 && !(muckCount >= 5)){
-                mode = 3;
-            }
-            else if (tryMove(randomDirection())){
-                  //System.out.println("I moved!");
-            }
-        }
+        
     }
 
     static boolean smartMove(Direction dir) throws GameActionException{
     if (tryMove(dir)) {
-          System.out.println("imma skeddadle");
-          //System.out.println("I moved");
           return true;
         }
         else if(tryMove(dir.rotateLeft())){
-          System.out.println("I skeddaddle the other way");
           return true;
         }
         else if(tryMove(dir.rotateRight())){
-          System.out.println("I skeddaddle the other other way");
           return true;
         }
         return false;
@@ -530,4 +465,5 @@ public strictfp class RobotPlayer {
         }
         return influence + 1;
     }
+
 }
