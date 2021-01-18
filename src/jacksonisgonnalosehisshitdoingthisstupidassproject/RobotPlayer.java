@@ -1,5 +1,6 @@
 package jacksonisgonnalosehisshitdoingthisstupidassproject;
 import battlecode.common.*;
+import java.util.Random;
 
 public strictfp class RobotPlayer {
     static RobotController rc;
@@ -22,11 +23,17 @@ public strictfp class RobotPlayer {
     };
     //store ID and location of an ally and home enlightenment center
 
-    static Location homeLoc;
+    static MapLocation homeLoc;
     static int homeID;
 
-    static int turnCount;
+    static RobotType lastRobotMade;
 
+    static Direction lastMove;
+    static Direction target;
+
+    static boolean alert;
+
+    static int turnCount;
     //HELLO
     /**
      * run() is the method that is called when a robot is instantiated in the Battlecode world.
@@ -40,6 +47,10 @@ public strictfp class RobotPlayer {
         RobotPlayer.rc = rc;
         homeLoc = null;
         homeID = -1;
+        lastRobotMade = null;
+        alert = false;
+        target = null;
+        lastMove = null;
 
         //System.out.println("I'm a " + rc.getType() + " and I just got created!");
         while (true) {
@@ -69,92 +80,104 @@ public strictfp class RobotPlayer {
 
     static void runEnlightenmentCenter() throws GameActionException {
         if (homeID == -1) {
-
+            homeID = rc.getID();
+            homeLoc = rc.getLocation();
         }
+
+        //count ally bots
+        RobotInfo[] allys = rc.senseNearbyRobots(-1, rc.getTeam());
+        int[] allyBots = new int[4];
+        for (RobotInfo robot : allys) {
+            switch (robot.type) {
+                case POLITICIAN: allyBots[0]++; break;
+                case SLANDERER: allyBots[1]++; break;
+                case MUCKRAKER: allyBots[2]++; break;
+                case ENLIGHTENMENT_CENTER: allyBots[3]++; break;
+            }
+        }
+
+        //count enemy bots
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        int[] enemyBots = new int[4];
+        for (RobotInfo robot : enemies) {
+            switch (robot.type) {
+                case POLITICIAN: enemyBots[0]++; break;
+                case SLANDERER: enemyBots[1]++; break;
+                case MUCKRAKER: enemyBots[2]++; break;
+                case ENLIGHTENMENT_CENTER: enemyBots[3]++; break;
+            }
+        }
+
+        if (lastRobotMade == null) {
+            for (Direction dir: directions) {
+                if (rc.canBuildRobot(RobotType.SLANDERER, dir, calculateSlanderInfluence(rc.getInfluence()))) {
+                    rc.buildRobot(RobotType.SLANDERER, dir, calculateSlanderInfluence(rc.getInfluence()));
+                    lastRobotMade = RobotType.SLANDERER;
+                    return;
+                }
+            }
+        }
+
+        if (lastRobotMade == RobotType.SLANDERER) {
+            for (Direction dir: directions) {
+                if (rc.canBuildRobot(RobotType.MUCKRAKER, dir, 1)) {
+                    rc.buildRobot(RobotType.MUCKRAKER, dir, 1);
+                    lastRobotMade = RobotType.MUCKRAKER;
+                    return;
+                }
+            }
+        }
+
+        if (lastRobotMade == RobotType.MUCKRAKER) {
+            for (Direction dir: directions) {
+                int influence = (int)(rc.getInfluence() * 0.1);
+                if (rc.canBuildRobot(RobotType.POLITICIAN, dir, influence)) {
+                    rc.buildRobot(RobotType.POLITICIAN, dir, influence);
+                    lastRobotMade = RobotType.POLITICIAN;
+                    return;
+                }
+            }
+        }
+
+        if (lastRobotMade == RobotType.POLITICIAN) {
+            for (Direction dir: directions) {
+                if (rc.canBuildRobot(RobotType.SLANDERER, dir, calculateSlanderInfluence(rc.getInfluence()))) {
+                    rc.buildRobot(RobotType.SLANDERER, dir, calculateSlanderInfluence(rc.getInfluence()));
+                    lastRobotMade = RobotType.SLANDERER;
+                    return;
+                }
+            }
+        }
+
 
     }
 
     static void runPolitician() throws GameActionException {
+        RobotInfo[] allyBots = rc.senseNearbyRobots(-1, rc.getTeam());
+        RobotInfo[] enemyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+
         // set home equal to the EC that built it
-        // if home EC has enemy EC loc, set flag and enemyLoc
         if (homeLoc == null) {
-            for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+            for (RobotInfo robot : allyBots) {
                 if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
                     homeID = robot.ID;
                     homeLoc = robot.location;
+                    Direction toHome = rc.getLocation().directionTo(homeLoc);
+                    target = toHome.opposite();
                     break;
                 }
             }
         }
 
-        if (enemyLoc == null) {
-            if (rc.canGetFlag(homeID)) {
-                int ecFlag = rc.getFlag(homeID);
-                if (ecFlag != 0) {
-                    if (rc.canSetFlag(ecFlag)) rc.setFlag(ecFlag);
-                    enemyLoc = getLocationFromFlag(ecFlag);
-                }
-            }
+        if (target == null) {
+            Random rand = new Random();
+            target = directions[rand.nextInt(8)];
         }
 
-        Team enemy = rc.getTeam().opponent();
-        int actionRadius = rc.getType().actionRadiusSquared;
-        RobotInfo[] robotsNearby = rc.senseNearbyRobots(actionRadius);
-        int enemyCount = 0;
-        for (RobotInfo robot: robotsNearby) {
-            if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-                if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
-                    if(rc.canEmpower(actionRadius)) {
-                        //System.out.println("jeff say go attek");
-                        rc.empower(actionRadius);
-                        return;
-                    }
-                }
-            }
-            if (robot.team == enemy) {
-                enemyCount++;
-            }
+        if (!rc.onTheMap(rc.getLocation().add(target))) {
+            target = target.rotateRight().rotateRight();
         }
-
-        // if it has an enemyLoc, move towards enemyLoc
-        if (enemyLoc != null) {
-            Direction dirToEnemy = rc.getLocation().directionTo(enemyLoc);
-            if (smartMove(dirToEnemy)) {
-                return;
-            }
-            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-                enemyLoc = null;
-                enemyID = 0;
-            }
-        }
-
-        if (enemyCount > 6) {
-            if (rc.canEmpower(actionRadius)) {
-                rc.empower(actionRadius);
-                return;
-            }
-        }
-        else {
-            //System.out.println("skrting closer");
-            int[] enemyCounter = new int[8];
-            MapLocation location = rc.getLocation();
-            for (RobotInfo robot: robotsNearby) {
-                for (int i = 0; i < 8; i++) {
-                    MapLocation newLocation = location.add(directions[i]);
-                    if (newLocation.distanceSquaredTo(robot.location) <= actionRadius) {
-                        enemyCounter[i]++;
-                    }
-                }
-            }
-            int maxEnemySpot = 0;
-            for (int i = 0; i < 8; i++) {
-                if (enemyCounter[i] > enemyCounter[maxEnemySpot]) {
-                    maxEnemySpot = i;
-                }
-            }
-            smartMove(directions[maxEnemySpot]);
-            return;
-        }
+        smartMove(target);
     }
 
     static void runSlanderer() throws GameActionException {
@@ -189,113 +212,70 @@ public strictfp class RobotPlayer {
             }
           }
         }
-        if (tryMove(randomDirection())) {
-            //System.out.println("I moved!");
+        if (rc.getLocation().distanceSquaredTo(homeLoc) < 25) {
+            if (tryMove(randomDirection())) {
+                //System.out.println("I moved!");
+            }
         }
     }
 
     static void runMuckraker() throws GameActionException {
-        Team ally = rc.getTeam();
-        Team enemy = rc.getTeam().opponent();
-        int actionRadius = rc.getType().actionRadiusSquared;
-        for (RobotInfo robot : rc.senseNearbyRobots(actionRadius, enemy)) {
-            if (robot.type.canBeExposed()) {
-                //It's a slanderer... go get them!
-                if (rc.canExpose(robot.location)) {
-                    //System.out.println("e x p o s e d");
-                    rc.expose(robot.location);
-                    return;
-                }
-            }
-        }
+        RobotInfo[] allyBots = rc.senseNearbyRobots(-1, rc.getTeam());
+        RobotInfo[] enemyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 
-        //scouting mode
-        //enemyLoc should be NULL in this mode
-        if (mode == 0) {
-            //set home location on spawn
-            if (homeLoc == null) {
-              for (RobotInfo robot : rc.senseNearbyRobots(-1, rc.getTeam())) {
+        if (homeLoc == null) {
+            for (RobotInfo robot: allyBots) {
                 if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-                  homeID = robot.ID;
-                  homeLoc = robot.location;
+                    homeID = robot.ID;
+                    homeLoc = robot.location;
+                    Direction toHome = rc.getLocation().directionTo(robot.location);
+                    target = toHome.opposite();
+                    break;
                 }
-              }
-            }
-            //runs if home does not have target location
-            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-                for (RobotInfo robot: rc.senseNearbyRobots(-1)) {
-                    if (robot.type == RobotType.ENLIGHTENMENT_CENTER) {
-                        if (robot.getTeam() == enemy || robot.getTeam() == Team.NEUTRAL){
-                            enemyLoc = robot.location;
-                            enemyID = robot.ID;
-                            rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(robot.location));
-                            mode = 1;
-                        }
-                    }
-                }
-                muckMove();
-            }
-            //runs if home already has target location
-            else {
-                mode = 2;
-                muckMove();
             }
         }
 
-        //return mode
-        //flag is set to location of enemy ec
-        if (mode == 1) {
-            //runs if home does not have target location
-            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-                rc.setFlag(pushIDToFlag(turnCount % 2, enemyID) + pushLocationToFlag(enemyLoc));
-                Direction toHome = rc.getLocation().directionTo(homeLoc);
-                if (tryMove(toHome)) {
-                    return;
-                }
-                if (tryMove(toHome.rotateLeft())) {
-                    return;
-                }
-                if (tryMove(toHome.rotateRight())) {
-                    return;
+        //search for slanderers to expose and look if any nearby enemy politicians
+        for (RobotInfo robot: enemyBots) {
+            if (robot.type == RobotType.SLANDERER) {
+                if (rc.canExpose(robot.ID)) {
+                    rc.expose(robot.ID);
                 }
             }
-            //runs if home does have target location
-            else {
-                mode = 2;
+            if (robot.type == RobotType.POLITICIAN) {
+                alert = true;
             }
         }
 
-        //random mode
-        //already did its job, walking around randomly
-        if (mode == 2) {
-            if (rc.canGetFlag(homeID) && rc.getFlag(homeID) == 0) {
-                mode = 0;
-                enemyID = -1;
-                enemyLoc = null;
-                if (rc.canSetFlag(0)) rc.setFlag(0);
+        //look to protect home EC if there are nearby enemy politicians and muckraker is near home
+        if (alert == true && rc.canSenseLocation(homeLoc)) {
+            int countCloserMuckrakers = 0;
+            for (RobotInfo robot : allyBots) {
+                if (robot.type == RobotType.MUCKRAKER && (robot.location.distanceSquaredTo(homeLoc) < rc.getLocation().distanceSquaredTo(homeLoc))) {
+                    countCloserMuckrakers += 1;
+                }
             }
-            else muckMove();
+            if (countCloserMuckrakers > 4) {
+                alert = false;
+            }
         }
-    }
 
-    static void muckMove() throws GameActionException{
-      boolean moved = false;
-      while(!moved){
-        if(cameFrom == null){
-          Direction tempdir = randomDirection();
-          if(tryMove(tempdir)){
-            cameFrom = tempdir.opposite();
-            moved = true;
-          }
+        if (alert == true) {
+            if (rc.getLocation().distanceSquaredTo(homeLoc) > 1) {
+                smartMove(rc.getLocation().directionTo(homeLoc));
+            }
+            int flag = defense(alert);
+            if (rc.canSetFlag(flag)) {
+                rc.setFlag(flag);
+            }
         }
-        else{
-          Direction tempdir = randomDirection();
-          if(tempdir != cameFrom && tempdir != cameFrom.rotateLeft() && tempdir != cameFrom.rotateRight() && tryMove(tempdir)){
-            cameFrom = tempdir.opposite();
-            moved = true;
-          }
+        else {
+            if (!rc.onTheMap(rc.getLocation().add(target))) {
+                target = target.rotateRight().rotateRight();
+            }
+            smartMove(target);
         }
-      }
+
     }
 
     /**
@@ -394,14 +374,17 @@ public strictfp class RobotPlayer {
       if (tryMove(dir)) {
             //System.out.println("imma skeddadle");
             //System.out.println("I moved");
+            lastMove = dir.opposite();
             return true;
           }
           else if(tryMove(dir.rotateLeft())){
             //System.out.println("I skeddaddle the other way");
+            lastMove = dir.rotateLeft().opposite();
             return true;
           }
           else if(tryMove(dir.rotateRight())){
             //System.out.println("I skeddaddle the other other way");
+            lastMove = dir.rotateLeft().opposite();
             return true;
           }
           return false;
@@ -413,5 +396,12 @@ public strictfp class RobotPlayer {
             influence -= 1;
         }
         return influence + 1;
+    }
+
+    static int defense(boolean alert) {
+        if (alert) {
+            return 1 << 23;
+        }
+        return 0;
     }
 }
